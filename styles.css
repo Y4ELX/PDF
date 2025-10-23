@@ -1,0 +1,393 @@
+/* Reset y estilos base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #f5f6fa;
+    color: #2c3e50;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Toolbar */
+.toolbar {
+    background: white;
+    border-bottom: 1px solid #e1e8ed;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+}
+
+.toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-primary {
+    background: #3498db;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+}
+
+.btn-success {
+    background: #27ae60;
+}
+
+.btn-success:hover {
+    background: #229954;
+}
+
+.btn-info {
+    background: #17a2b8;
+}
+
+.btn-info:hover {
+    background: #138496;
+}
+
+.btn-nav {
+    background: #34495e;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn.active {
+    background: #e74c3c;
+}
+
+.file-name {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.page-info {
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.fields-info {
+    font-size: 12px;
+    color: #27ae60;
+    background: rgba(46, 204, 113, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* PDF Container */
+.pdf-container {
+    flex: 1;
+    overflow: auto;
+    background: #ecf0f1;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+.pdf-viewer {
+    position: relative;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.no-pdf {
+    text-align: center;
+    padding: 60px 40px;
+    color: #7f8c8d;
+}
+
+.no-pdf-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.no-pdf h3 {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.no-pdf p {
+    font-size: 14px;
+}
+
+/* Canvas del PDF */
+#pdfCanvas {
+    display: block;
+    cursor: crosshair;
+}
+
+#pdfCanvas.normal-cursor {
+    cursor: default;
+}
+
+/* Navigation */
+.navigation {
+    background: white;
+    border-top: 1px solid #e1e8ed;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Dynamic Inputs */
+.pdf-input {
+    position: absolute;
+    background: rgba(52, 152, 219, 0.1);
+    border: 2px solid #3498db;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 14px;
+    font-family: inherit;
+    z-index: 100;
+    cursor: move;
+    min-width: 120px;
+    min-height: 30px;
+    resize: both;
+    overflow: hidden;
+}
+
+.pdf-input:focus {
+    background: rgba(52, 152, 219, 0.2);
+    border-color: #2980b9;
+    outline: none;
+    cursor: text;
+}
+
+.pdf-input:hover {
+    border-color: #2980b9;
+}
+
+.pdf-textarea {
+    resize: both;
+    min-height: 60px;
+}
+
+/* Existing PDF Fields */
+.pdf-input.existing-field {
+    background: rgba(46, 204, 113, 0.1);
+    border: 2px solid #27ae60;
+}
+
+.pdf-input.existing-field:focus {
+    background: rgba(46, 204, 113, 0.2);
+    border-color: #229954;
+}
+
+.pdf-input.existing-field:hover {
+    border-color: #229954;
+}
+
+/* Read-only fields */
+.pdf-input[readonly] {
+    background: rgba(149, 165, 166, 0.1);
+    border-color: #95a5a6;
+    cursor: default;
+}
+
+.pdf-input[readonly]:hover {
+    border-color: #7f8c8d;
+}
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 140px;
+    overflow: hidden;
+}
+
+.context-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.context-item:hover {
+    background: #f8f9fa;
+}
+
+.context-item:active {
+    background: #e9ecef;
+}
+
+/* Properties Panel */
+.properties-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    padding: 20px;
+    min-width: 300px;
+}
+
+.properties-panel h4 {
+    margin-bottom: 16px;
+    color: #34495e;
+    font-weight: 600;
+}
+
+.property-group {
+    margin-bottom: 12px;
+}
+
+.property-group label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #34495e;
+    font-size: 13px;
+}
+
+.property-group input,
+.property-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.property-group input:focus,
+.property-group select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.property-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: flex-end;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .toolbar-section {
+        justify-content: center;
+    }
+
+    .pdf-container {
+        padding: 10px;
+    }
+
+    .properties-panel {
+        width: 90%;
+        max-width: 300px;
+    }
+}
+
+/* Loading state */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: #7f8c8d;
+}
+
+.loading:after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px solid #3498db;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Highlight effect for adding fields */
+.adding-field {
+    cursor: crosshair !important;
+}
+
+.adding-field .pdf-input {
+    pointer-events: none;
+}

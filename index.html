@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Inputs en PDF</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
+                <button id="uploadBtn" class="btn btn-primary">
+                    📄 Subir PDF
+                </button>
+                <button id="addFieldBtn" class="btn btn-secondary" disabled>
+                    ➕ Modo Agregar Campo
+                </button>
+                <button id="savePdfBtn" class="btn btn-success" disabled>
+                    � Descargar PDF
+                </button>
+                <button id="saveJsonBtn" class="btn btn-secondary" disabled>
+                    📋 Exportar JSON
+                </button>
+                <button id="diagnosticBtn" class="btn btn-info" disabled style="font-size: 12px;">
+                    🔍 Diagnóstico
+                </button>
+            </div>
+            <div class="toolbar-section">
+                <span id="fileName" class="file-name"></span>
+                <span id="pageInfo" class="page-info"></span>
+                <span id="fieldsInfo" class="fields-info" style="display: none;"></span>
+            </div>
+        </div>
+
+        <!-- PDF Viewer Container -->
+        <div class="pdf-container">
+            <div class="pdf-viewer" id="pdfViewer">
+                <div class="no-pdf">
+                    <div class="no-pdf-icon">📄</div>
+                    <h3>No hay PDF cargado</h3>
+                    <p>Haz clic en "Subir PDF" para comenzar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Navigation -->
+        <div class="navigation" id="navigation" style="display: none;">
+            <button id="prevPage" class="btn btn-nav">◀ Anterior</button>
+            <span id="pageNum">1</span> / <span id="pageCount">1</span>
+            <button id="nextPage" class="btn btn-nav">Siguiente ▶</button>
+        </div>
+
+        <!-- Context Menu -->
+        <div id="contextMenu" class="context-menu" style="display: none;">
+            <div class="context-item" data-action="edit">✏️ Editar</div>
+            <div class="context-item" data-action="delete">🗑️ Eliminar</div>
+        </div>
+
+        <!-- Input Properties Panel -->
+        <div id="propertiesPanel" class="properties-panel" style="display: none;">
+            <h4>Propiedades del Input</h4>
+            <div class="property-group">
+                <label>Nombre:</label>
+                <input type="text" id="inputName" placeholder="nombre_campo">
+            </div>
+            <div class="property-group">
+                <label>Valor:</label>
+                <input type="text" id="inputValue" placeholder="Valor por defecto">
+            </div>
+            <div class="property-group">
+                <label>Tipo:</label>
+                <select id="inputType">
+                    <option value="text">Texto</option>
+                    <option value="textarea">Área de texto</option>
+                </select>
+            </div>
+            <div class="property-actions">
+                <button id="applyProperties" class="btn btn-small btn-primary">Aplicar</button>
+                <button id="cancelProperties" class="btn btn-small btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
