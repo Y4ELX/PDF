@@ -379,7 +379,6 @@ body {
 /* Read-only fields */
 .pdf-input[readonly] {
     background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.3);
     cursor: default;
     opacity: 0.7;
 }
@@ -391,7 +390,6 @@ body {
 .pdf-input[readonly]:focus {
     background: #ffffff !important;
     outline: none !important;
-    border: 2px solid rgba(255, 255, 255, 0.5) !important;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
 }
 
@@ -662,4 +660,33 @@ input.pdf-checkbox:focus {
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(64, 255, 35, 0.5);
+}
+
+input.pdf-input,
+textarea.pdf-input,
+input.pdf-checkbox {
+    border: none !important;             /* Quitar borde */
+    outline: none !important;            /* Quitar outline */
+    box-shadow: none !important;         /* Quitar sombras */
+    background-color: #f1f4ff !important; /* Color inicial */
+    color: #151924 !important;           /* Texto oscuro para contraste */
+    font-family: inherit !important;
+    font-size: 14px !important;
+    padding: 4px 6px !important;
+}
+
+/* Cuando se haga focus o se esté escribiendo */
+input.pdf-input:focus,
+textarea.pdf-input:focus,
+input.pdf-checkbox:focus {
+    background-color: #ffffff !important; /* Color blanco mientras se escribe */
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Si ya hay texto dentro (para mantener blanco) */
+input.pdf-input:not(:placeholder-shown),
+textarea.pdf-input:not(:placeholder-shown) {
+    background-color: #ffffff !important;
 }

@@ -27,12 +27,15 @@ class PDFInputEditor {
         this.setupElements();
         this.setupEventListeners();
         
-        // Debug: verificar elementos de zoom
-        console.log('Zoom elements check:', {
+        // Debug: verificar elementos importantes
+        console.log('Elements check:', {
             zoomIn: !!this.elements.zoomInBtn,
             zoomOut: !!this.elements.zoomOutBtn,
             fitPage: !!this.elements.fitPageBtn,
-            zoomLevel: !!this.elements.zoomLevel
+            zoomLevel: !!this.elements.zoomLevel,
+            pdfContainer: !!this.elements.pdfContainer,
+            createFieldBtn: !!this.elements.createFieldBtn,
+            newFieldModal: !!this.elements.newFieldModal
         });
     }
 
@@ -84,7 +87,8 @@ class PDFInputEditor {
             zoomInBtn: document.getElementById('zoomIn'),
             zoomOutBtn: document.getElementById('zoomOut'),
             fitPageBtn: document.getElementById('zoomFit'),
-            zoomLevel: document.getElementById('zoomLevel')
+            zoomLevel: document.getElementById('zoomLevel'),
+            pdfContainer: document.querySelector('.pdf-container')
         };
     }
 
@@ -108,6 +112,7 @@ class PDFInputEditor {
 
         // Add field mode
         this.elements.addFieldBtn.addEventListener('click', () => {
+            console.log('🔧 Add Field Button clicked');
             this.toggleAddFieldMode();
         });
 
@@ -178,48 +183,52 @@ class PDFInputEditor {
         // Mouse wheel zoom - enfoque más directo
         this.setupZoomEvents();
 
-        // Touch zoom support para dispositivos móviles
-        let touchStartDistance = 0;
-        let touchStartZoom = 0;
+        // Touch zoom support para dispositivos móviles (con verificación de existencia)
+        if (this.elements.pdfContainer) {
+            let touchStartDistance = 0;
+            let touchStartZoom = 0;
 
-        this.elements.pdfContainer.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                touchStartDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-                touchStartZoom = this.zoomLevel;
-            }
-        });
-
-        this.elements.pdfContainer.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const currentDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-                
-                const scale = currentDistance / touchStartDistance;
-                const newZoom = touchStartZoom * scale;
-                
-                if (newZoom >= this.minZoom && newZoom <= this.maxZoom) {
-                    this.zoomLevel = Math.round(newZoom / 25) * 25; // Snap to 25% increments
-                    this.updateZoom();
+            this.elements.pdfContainer.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    touchStartDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                    touchStartZoom = this.zoomLevel;
                 }
-            }
-        });
+            });
+
+            this.elements.pdfContainer.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    const currentDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                    
+                    const scale = currentDistance / touchStartDistance;
+                    const newZoom = touchStartZoom * scale;
+                    
+                    if (newZoom >= this.minZoom && newZoom <= this.maxZoom) {
+                        this.zoomLevel = Math.round(newZoom / 25) * 25; // Snap to 25% increments
+                        this.updateZoom();
+                    }
+                }
+            });
+        }
 
         // New field modal
         this.elements.createFieldBtn.addEventListener('click', () => {
+            console.log('🔧 Create Field Button clicked');
             this.createNewFieldFromModal();
         });
 
         this.elements.cancelFieldBtn.addEventListener('click', () => {
+            console.log('🔧 Cancel Field Button clicked');
             this.hideNewFieldModal();
         });
 
@@ -760,7 +769,10 @@ class PDFInputEditor {
     }
 
     createNewFieldFromModal() {
+        console.log('🔧 createNewFieldFromModal called');
         const fieldName = this.elements.newFieldName.value.trim();
+        console.log('Field name:', fieldName);
+        console.log('Pending position:', this.pendingFieldPosition);
         
         // Validar que se ingresó un nombre
         if (!fieldName) {
@@ -769,12 +781,15 @@ class PDFInputEditor {
             return;
         }
 
-        // Validar que el nombre no esté duplicado
+        // Validar que el nombre no esté duplicado en esta página
         const existingField = this.inputs.find(input => input.name === fieldName);
         if (existingField) {
-            alert(`Ya existe un campo con el nombre "${fieldName}". Por favor elige un nombre diferente.`);
-            this.elements.newFieldName.focus();
-            return;
+            const useAnyway = confirm(`Ya existe un campo con el nombre "${fieldName}". \n\n¿Deseas crear el campo de todas formas?\n\n- SÍ: Se creará con el nombre "${fieldName}"\n- NO: Podrás cambiar el nombre`);
+            
+            if (!useAnyway) {
+                this.elements.newFieldName.focus();
+                return;
+            }
         }
 
         // Crear el campo con los datos del modal
@@ -801,7 +816,7 @@ class PDFInputEditor {
         // Actualizar información de campos
         this.updateFieldsInfo();
         
-        console.log(`✅ Campo "${fieldName}" creado exitosamente`);
+        console.log(`✅ Campo "${fieldName}" creado exitosamente con el nombre exacto que escribiste`);
     }
 
     applyInputProperties() {
@@ -949,7 +964,9 @@ class PDFInputEditor {
         // Show initial message
         this.elements.pdfViewer.innerHTML = `
             <div class="no-pdf">
-                <div class="no-pdf-icon">PDF</div>
+                <div class="no-pdf-icon">
+                    <img src="assets/pdficon.png" height="100px" alt="PDF" onerror="this.style.display='none'; this.parentNode.innerHTML='PDF';">
+                </div>
                 <h3>Editor de Inputs en PDF</h3>
                 <p>Selecciona un archivo PDF para comenzar a editar</p>
             </div>
@@ -1157,8 +1174,6 @@ class PDFInputEditor {
             const existingCount = this.inputs.filter(input => input.isExisting).length;
             const newCount = this.inputs.filter(input => !input.isExisting).length;
             
-            alert(`✅ PDF descargado exitosamente!\n\n📊 Campos incluidos:\n- ${existingCount} campos originales\n- ${newCount} campos nuevos\n- Total: ${this.inputs.length} campos`);
-
         } catch (error) {
             console.error('Error creando PDF:', error);
             
@@ -1187,7 +1202,22 @@ class PDFInputEditor {
 
     createNewFormField(form, page, input, x, y, width, height) {
         try {
-            const fieldName = input.name + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            // Usar el nombre original del campo, solo añadir sufijo si hay conflicto
+            let fieldName = input.name;
+            
+            // Verificar si ya existe un campo con este nombre en el formulario
+            const existingFields = form.getFields();
+            const existingNames = existingFields.map(field => field.getName());
+            
+            // Solo añadir sufijo si hay duplicados
+            if (existingNames.includes(fieldName)) {
+                let counter = 1;
+                while (existingNames.includes(`${input.name}_${counter}`)) {
+                    counter++;
+                }
+                fieldName = `${input.name}_${counter}`;
+                console.log(`⚠️ Campo duplicado detectado. Renombrado de "${input.name}" a "${fieldName}"`);
+            }
             
             // Definir colores según si es campo existente o nuevo
             const isExisting = input.isExisting;
