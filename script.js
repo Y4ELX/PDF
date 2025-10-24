@@ -21,8 +21,19 @@ class PDFInputEditor {
     }
 
     init() {
+        this.zoomLevel = 100;
+        this.minZoom = 25;
+        this.maxZoom = 400;
         this.setupElements();
         this.setupEventListeners();
+        
+        // Debug: verificar elementos de zoom
+        console.log('Zoom elements check:', {
+            zoomIn: !!this.elements.zoomInBtn,
+            zoomOut: !!this.elements.zoomOutBtn,
+            fitPage: !!this.elements.fitPageBtn,
+            zoomLevel: !!this.elements.zoomLevel
+        });
     }
 
     updateFieldsInfo() {
@@ -69,7 +80,11 @@ class PDFInputEditor {
             newFieldType: document.getElementById('newFieldType'),
             newFieldValue: document.getElementById('newFieldValue'),
             createFieldBtn: document.getElementById('createFieldBtn'),
-            cancelFieldBtn: document.getElementById('cancelFieldBtn')
+            cancelFieldBtn: document.getElementById('cancelFieldBtn'),
+            zoomInBtn: document.getElementById('zoomIn'),
+            zoomOutBtn: document.getElementById('zoomOut'),
+            fitPageBtn: document.getElementById('zoomFit'),
+            zoomLevel: document.getElementById('zoomLevel')
         };
     }
 
@@ -141,6 +156,64 @@ class PDFInputEditor {
             this.hidePropertiesPanel();
         });
 
+        // Zoom controls - con verificación de existencia
+        if (this.elements.zoomInBtn) {
+            this.elements.zoomInBtn.addEventListener('click', () => {
+                this.zoomIn();
+            });
+        }
+
+        if (this.elements.zoomOutBtn) {
+            this.elements.zoomOutBtn.addEventListener('click', () => {
+                this.zoomOut();
+            });
+        }
+
+        if (this.elements.fitPageBtn) {
+            this.elements.fitPageBtn.addEventListener('click', () => {
+                this.fitToPage();
+            });
+        }
+
+        // Mouse wheel zoom - enfoque más directo
+        this.setupZoomEvents();
+
+        // Touch zoom support para dispositivos móviles
+        let touchStartDistance = 0;
+        let touchStartZoom = 0;
+
+        this.elements.pdfContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                touchStartDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                touchStartZoom = this.zoomLevel;
+            }
+        });
+
+        this.elements.pdfContainer.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const currentDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                const scale = currentDistance / touchStartDistance;
+                const newZoom = touchStartZoom * scale;
+                
+                if (newZoom >= this.minZoom && newZoom <= this.maxZoom) {
+                    this.zoomLevel = Math.round(newZoom / 25) * 25; // Snap to 25% increments
+                    this.updateZoom();
+                }
+            }
+        });
+
         // New field modal
         this.elements.createFieldBtn.addEventListener('click', () => {
             this.createNewFieldFromModal();
@@ -149,6 +222,9 @@ class PDFInputEditor {
         this.elements.cancelFieldBtn.addEventListener('click', () => {
             this.hideNewFieldModal();
         });
+
+        // Keyboard zoom shortcuts - mejorados
+        this.setupKeyboardZoom();
 
         // Close modal when clicking outside
         this.elements.newFieldModal.addEventListener('click', (e) => {
@@ -226,6 +302,10 @@ class PDFInputEditor {
 
             // Render first page
             await this.renderPage();
+
+            // Initialize zoom display
+            this.updateZoomDisplay();
+            console.log('PDF loaded successfully, zoom initialized at', this.zoomLevel + '%');
 
         } catch (error) {
             console.error('Error loading PDF:', error);
@@ -384,10 +464,18 @@ class PDFInputEditor {
             this.canvas.height = viewport.height;
             this.canvas.style.width = viewport.width + 'px';
             this.canvas.style.height = viewport.height + 'px';
+            this.canvas.style.display = 'block';
 
             // Clear viewer and add canvas
             this.elements.pdfViewer.innerHTML = '';
             this.elements.pdfViewer.appendChild(this.canvas);
+            
+            // Añadir clases y configurar tamaño para PDF cargado
+            this.elements.pdfViewer.classList.add('has-pdf');
+            document.querySelector('.pdf-wrapper').classList.add('has-content');
+            this.elements.pdfViewer.style.minHeight = viewport.height + 'px';
+            this.elements.pdfViewer.style.width = 'auto';
+            this.elements.pdfViewer.style.maxWidth = 'none';
 
             // Render PDF page
             await page.render({
@@ -402,6 +490,9 @@ class PDFInputEditor {
             // Update navigation buttons
             this.elements.prevPage.disabled = this.currentPage === 1;
             this.elements.nextPage.disabled = this.currentPage === this.totalPages;
+
+            // Update zoom level display
+            this.elements.zoomLevel.textContent = `${this.zoomLevel}%`;
 
             // Update fields info
             this.updateFieldsInfo();
@@ -848,6 +939,13 @@ class PDFInputEditor {
             this.canvas.classList.remove('adding-field');
         }
 
+        // Reset viewer to no-pdf state
+        this.elements.pdfViewer.classList.remove('has-pdf');
+        document.querySelector('.pdf-wrapper').classList.remove('has-content');
+        this.elements.pdfViewer.style.minHeight = '';
+        this.elements.pdfViewer.style.width = '';
+        this.elements.pdfViewer.style.maxWidth = '';
+        
         // Show initial message
         this.elements.pdfViewer.innerHTML = `
             <div class="no-pdf">
@@ -1348,6 +1446,143 @@ class PDFInputEditor {
                 </body>
             </html>
         `);
+    }
+
+    setupZoomEvents() {
+        console.log('Setting up zoom events...');
+        
+        // Manejar eventos de wheel para zoom Y scroll
+        document.addEventListener('wheel', (e) => {
+            const pdfContainer = document.querySelector('.pdf-container');
+            if (!pdfContainer) return;
+            
+            const rect = pdfContainer.getBoundingClientRect();
+            const isOverPdfArea = (
+                e.clientX >= rect.left && 
+                e.clientX <= rect.right && 
+                e.clientY >= rect.top && 
+                e.clientY <= rect.bottom
+            );
+
+            if (isOverPdfArea) {
+                if (e.ctrlKey || e.metaKey) {
+                    // ZOOM MODE - Con Ctrl presionado
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log(`Wheel ZOOM - Ctrl: ${e.ctrlKey}, Delta: ${e.deltaY}`);
+                    
+                    if (e.deltaY < 0) {
+                        console.log('🔍 ZOOM IN aplicado!');
+                        this.zoomIn();
+                    } else {
+                        console.log('🔍 ZOOM OUT aplicado!');
+                        this.zoomOut();
+                    }
+                } else {
+                    // SCROLL MODE - Sin Ctrl, permitir scroll natural
+                    console.log(`Wheel SCROLL - Delta: ${e.deltaY}`);
+                    // No preventDefault aquí, permitir scroll natural
+                }
+            }
+        }, { passive: false });
+        
+        console.log('Zoom events configured successfully!');
+    }
+
+    setupKeyboardZoom() {
+        document.addEventListener('keydown', (e) => {
+            // Solo funcionar si hay un PDF cargado
+            if (!this.pdf) return;
+            
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case '=':
+                    case '+':
+                        e.preventDefault();
+                        this.zoomIn();
+                        break;
+                    case '-':
+                        e.preventDefault();
+                        this.zoomOut();
+                        break;
+                    case '0':
+                        e.preventDefault();
+                        this.fitToPage();
+                        break;
+                }
+            }
+        });
+    }
+
+    // Zoom functionality
+    zoomIn() {
+        if (!this.pdf) return;
+        
+        if (this.zoomLevel < this.maxZoom) {
+            this.zoomLevel += 25;
+            this.updateZoom();
+            console.log(`Zoom In: ${this.zoomLevel}%`);
+        } else {
+            console.log(`Zoom máximo alcanzado: ${this.maxZoom}%`);
+        }
+    }
+
+    zoomOut() {
+        if (!this.pdf) return;
+        
+        if (this.zoomLevel > this.minZoom) {
+            this.zoomLevel -= 25;
+            this.updateZoom();
+            console.log(`Zoom Out: ${this.zoomLevel}%`);
+        } else {
+            console.log(`Zoom mínimo alcanzado: ${this.minZoom}%`);
+        }
+    }
+
+    fitToPage() {
+        if (!this.pdf) return;
+        
+        const containerWidth = this.elements.pdfViewer.clientWidth - 48; // padding
+        const containerHeight = this.elements.pdfViewer.clientHeight - 48;
+        
+        this.pdf.getPage(this.currentPage).then(page => {
+            const viewport = page.getViewport({ scale: 1.0 });
+            
+            const scaleX = containerWidth / viewport.width;
+            const scaleY = containerHeight / viewport.height;
+            const fitScale = Math.min(scaleX, scaleY);
+            
+            this.zoomLevel = Math.round(fitScale * 100);
+            this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel));
+            
+            this.updateZoom();
+        });
+    }
+
+    updateZoomDisplay() {
+        if (this.elements.zoomLevel) {
+            this.elements.zoomLevel.textContent = `${this.zoomLevel}%`;
+        }
+    }
+
+    updateZoom() {
+        // Calcular la nueva escala
+        this.scale = (this.zoomLevel / 100) * 1.5; // Base scale of 1.5
+        
+        // Actualizar el display del zoom con feedback visual
+        if (this.elements.zoomLevel) {
+            this.elements.zoomLevel.textContent = `${this.zoomLevel}%`;
+            this.elements.zoomLevel.classList.add('updating');
+            setTimeout(() => {
+                this.elements.zoomLevel.classList.remove('updating');
+            }, 200);
+        }
+        
+        // Re-renderizar la página con el nuevo zoom
+        if (this.pdf && this.currentPage) {
+            console.log(`Actualizando zoom a ${this.zoomLevel}% (escala: ${this.scale})`);
+            this.renderPage();
+        }
     }
 }
 

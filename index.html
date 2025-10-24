@@ -33,11 +33,15 @@
 
         <!-- PDF Viewer Container -->
         <div class="pdf-container">
-            <div class="pdf-viewer" id="pdfViewer">
-                <div class="no-pdf">
-                    <div class="no-pdf-icon">PDF</div>
-                    <h3>Editor de Inputs en PDF</h3>
-                    <p>Selecciona un archivo PDF para comenzar a editar</p>
+            <div class="pdf-wrapper">
+                <div class="pdf-viewer" id="pdfViewer">
+                    <div class="no-pdf">
+                        <div class="no-pdf-icon">
+                            <img src="assets/pdficon.png" height="100px" alt="">
+                        </div>
+                        <h3>Editor de Inputs en PDF</h3>
+                        <p>Selecciona un archivo PDF para comenzar a editar</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -52,6 +56,12 @@
                 <button id="nextPage" class="btn btn-nav">Siguiente</button>
             </div>
             <div class="nav-section">
+                <div class="zoom-controls">
+                    <button id="zoomOut" class="btn btn-nav">-</button>
+                    <span id="zoomLevel" class="zoom-level">100%</span>
+                    <button id="zoomIn" class="btn btn-nav">+</button>
+                    <button id="zoomFit" class="btn btn-nav">Ajustar</button>
+                </div>
                 <button id="savePdfBtn" class="btn btn-download" disabled>
                     Descargar PDF
                 </button>
