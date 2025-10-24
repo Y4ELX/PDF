@@ -32,7 +32,7 @@ class PDFInputEditor {
             const newCount = this.inputs.filter(input => !input.isExisting).length;
             const currentPageFields = this.inputs.filter(input => input.page === this.currentPage).length;
             
-            fieldsInfoElement.textContent = `📋 ${existingCount} existentes + ${newCount} nuevos (${currentPageFields} en esta página)`;
+            fieldsInfoElement.textContent = `${existingCount} existentes + ${newCount} nuevos (${currentPageFields} en esta página)`;
             fieldsInfoElement.style.display = 'inline';
         } else {
             fieldsInfoElement.style.display = 'none';
@@ -46,8 +46,7 @@ class PDFInputEditor {
             uploadBtn: document.getElementById('uploadBtn'),
             addFieldBtn: document.getElementById('addFieldBtn'),
             savePdfBtn: document.getElementById('savePdfBtn'),
-            saveJsonBtn: document.getElementById('saveJsonBtn'),
-            diagnosticBtn: document.getElementById('diagnosticBtn'),
+            newPdfBtn: document.getElementById('newPdfBtn'),
             fileName: document.getElementById('fileName'),
             pageInfo: document.getElementById('pageInfo'),
             fieldsInfo: document.getElementById('fieldsInfo'),
@@ -80,6 +79,12 @@ class PDFInputEditor {
             this.elements.pdfInput.click();
         });
 
+        // New PDF button
+        this.elements.newPdfBtn.addEventListener('click', () => {
+            this.resetEditor();
+            this.elements.pdfInput.click();
+        });
+
         this.elements.pdfInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 this.loadPDF(e.target.files[0]);
@@ -94,16 +99,6 @@ class PDFInputEditor {
         // Save as PDF
         this.elements.savePdfBtn.addEventListener('click', () => {
             this.savePdfWithFields();
-        });
-
-        // Export as JSON
-        this.elements.saveJsonBtn.addEventListener('click', () => {
-            this.saveInputsAsJSON();
-        });
-
-        // Diagnostic button
-        this.elements.diagnosticBtn.addEventListener('click', () => {
-            this.showDiagnostic();
         });
 
         // Navigation
@@ -215,13 +210,13 @@ class PDFInputEditor {
             // Update UI
             this.elements.fileName.textContent = file.name;
             this.elements.pageCount.textContent = this.totalPages;
-            this.elements.navigation.style.display = this.totalPages > 1 ? 'flex' : 'none';
+            this.elements.navigation.style.display = 'flex'; // Siempre mostrar navegación para el botón de descarga
             
-            // Enable buttons
+            // Hide upload button, show new PDF button, and enable other buttons
+            this.elements.uploadBtn.style.display = 'none';
+            this.elements.newPdfBtn.style.display = 'inline-flex';
             this.elements.addFieldBtn.disabled = false;
             this.elements.savePdfBtn.disabled = false;
-            this.elements.saveJsonBtn.disabled = false;
-            this.elements.diagnosticBtn.disabled = false;
 
             // Clear previous inputs
             this.clearAllInputs();
@@ -423,11 +418,11 @@ class PDFInputEditor {
         this.isAddingField = !this.isAddingField;
         
         if (this.isAddingField) {
-            this.elements.addFieldBtn.textContent = '❌ Cancelar Agregar';
+            this.elements.addFieldBtn.textContent = 'Cancelar';
             this.elements.addFieldBtn.classList.add('active');
             this.canvas.classList.add('adding-field');
         } else {
-            this.elements.addFieldBtn.textContent = '➕ Modo Agregar Campo';
+            this.elements.addFieldBtn.textContent = 'Añadir Input';
             this.elements.addFieldBtn.classList.remove('active');
             this.canvas.classList.remove('adding-field');
         }
@@ -820,6 +815,49 @@ class PDFInputEditor {
             inputData.width = rect.width;
             inputData.height = rect.height;
         }
+    }
+
+    resetEditor() {
+        // Reset all properties
+        this.pdf = null;
+        this.originalPdfBytes = null;
+        this.currentPage = 1;
+        this.totalPages = 0;
+        this.isAddingField = false;
+        this.selectedInput = null;
+        this.dragData = null;
+        this.pendingFieldPosition = null;
+
+        // Clear all inputs
+        this.clearAllInputs();
+
+        // Reset UI
+        this.elements.fileName.textContent = '';
+        this.elements.pageInfo.textContent = '';
+        this.elements.fieldsInfo.style.display = 'none';
+        this.elements.navigation.style.display = 'none';
+        this.elements.uploadBtn.style.display = 'inline-flex';
+        this.elements.newPdfBtn.style.display = 'none';
+        this.elements.addFieldBtn.disabled = true;
+        this.elements.savePdfBtn.disabled = true;
+        
+        // Reset add field button
+        this.elements.addFieldBtn.textContent = 'Añadir Input';
+        this.elements.addFieldBtn.classList.remove('active');
+        if (this.canvas) {
+            this.canvas.classList.remove('adding-field');
+        }
+
+        // Show initial message
+        this.elements.pdfViewer.innerHTML = `
+            <div class="no-pdf">
+                <div class="no-pdf-icon">PDF</div>
+                <h3>Editor de Inputs en PDF</h3>
+                <p>Selecciona un archivo PDF para comenzar a editar</p>
+            </div>
+        `;
+
+        console.log('Editor reiniciado');
     }
 
     saveInputsAsJSON() {

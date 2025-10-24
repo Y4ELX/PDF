@@ -6,11 +6,12 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: #f5f6fa;
-    color: #2c3e50;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+    background: #151924;
+    color: #ffffff;
     height: 100vh;
     overflow: hidden;
+    font-weight: 400;
 }
 
 .container {
@@ -21,13 +22,14 @@ body {
 
 /* Toolbar */
 .toolbar {
-    background: white;
-    border-bottom: 1px solid #e1e8ed;
-    padding: 12px 20px;
+    background: rgba(21, 25, 36, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(64, 255, 35, 0.1);
+    padding: 16px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     z-index: 1000;
 }
 
@@ -38,111 +40,153 @@ body {
 }
 
 .btn {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
+    background: rgba(64, 255, 35, 0.1);
+    color: #40ff23;
+    border: 1px solid rgba(64, 255, 35, 0.3);
+    padding: 12px 20px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    backdrop-filter: blur(5px);
 }
 
 .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    background: rgba(64, 255, 35, 0.2);
+    border-color: #40ff23;
+    box-shadow: 0 0 20px rgba(64, 255, 35, 0.3);
+    transform: translateY(-2px);
 }
 
 .btn:active {
     transform: translateY(0);
+    box-shadow: 0 0 10px rgba(64, 255, 35, 0.2);
 }
 
 .btn:disabled {
-    background: #bdc3c7;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
 
 .btn-primary {
-    background: #3498db;
+    background: linear-gradient(135deg, rgba(64, 255, 35, 0.2), rgba(64, 255, 35, 0.1));
+    border-color: #40ff23;
 }
 
 .btn-secondary {
-    background: #95a5a6;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-success {
-    background: #27ae60;
+    background: rgba(64, 255, 35, 0.2);
+    color: #40ff23;
+    border-color: #40ff23;
 }
 
 .btn-success:hover {
-    background: #229954;
+    background: rgba(64, 255, 35, 0.3);
+    box-shadow: 0 0 25px rgba(64, 255, 35, 0.4);
 }
 
 .btn-info {
-    background: #17a2b8;
+    background: rgba(64, 255, 35, 0.1);
+    color: #40ff23;
+    border-color: rgba(64, 255, 35, 0.3);
 }
 
 .btn-info:hover {
-    background: #138496;
+    background: rgba(64, 255, 35, 0.2);
 }
 
 .btn-nav {
-    background: #34495e;
-    padding: 8px 12px;
-    font-size: 13px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px 16px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-small {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 8px 16px;
+    font-size: 11px;
 }
 
 .btn.active {
-    background: #e74c3c;
+    background: #40ff23;
+    color: #151924;
+    border-color: #40ff23;
+    box-shadow: 0 0 20px rgba(64, 255, 35, 0.5);
+}
+
+.btn-download {
+    background: linear-gradient(135deg, rgba(64, 255, 35, 0.2), rgba(64, 255, 35, 0.1));
+    color: #40ff23;
+    border-color: #40ff23;
+    padding: 12px 24px;
+    font-weight: 600;
+}
+
+.btn-download:hover {
+    background: linear-gradient(135deg, rgba(64, 255, 35, 0.3), rgba(64, 255, 35, 0.2));
+    box-shadow: 0 0 30px rgba(64, 255, 35, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-download:disabled {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .file-name {
     font-weight: 600;
-    color: #34495e;
+    color: #ffffff;
+    font-size: 14px;
 }
 
 .page-info {
-    font-size: 13px;
-    color: #7f8c8d;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
 }
 
 .fields-info {
-    font-size: 12px;
-    color: #27ae60;
-    background: rgba(46, 204, 113, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
+    font-size: 11px;
+    color: #40ff23;
+    background: rgba(64, 255, 35, 0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
     font-weight: 500;
+    border: 1px solid rgba(64, 255, 35, 0.2);
 }
 
 /* PDF Container */
 .pdf-container {
     flex: 1;
     overflow: auto;
-    background: #ecf0f1;
+    background: #151924;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 20px;
+    padding: 24px;
 }
 
 .pdf-viewer {
     position: relative;
-    background: white;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(64, 255, 35, 0.1);
+    border-radius: 12px;
     overflow: hidden;
     max-width: 100%;
     max-height: 100%;
@@ -150,22 +194,29 @@ body {
 
 .no-pdf {
     text-align: center;
-    padding: 60px 40px;
-    color: #7f8c8d;
+    padding: 80px 40px;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(21, 25, 36, 0.8);
+    border-radius: 12px;
+    border: 1px dashed rgba(64, 255, 35, 0.3);
 }
 
 .no-pdf-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: #40ff23;
 }
 
 .no-pdf h3 {
-    margin-bottom: 8px;
-    font-weight: 600;
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #ffffff;
+    font-size: 18px;
 }
 
 .no-pdf p {
-    font-size: 14px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* Canvas del PDF */
@@ -180,14 +231,27 @@ body {
 
 /* Navigation */
 .navigation {
-    background: white;
-    border-top: 1px solid #e1e8ed;
-    padding: 12px 20px;
+    background: rgba(21, 25, 36, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(64, 255, 35, 0.1);
+    padding: 16px 24px;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nav-section {
+    display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.page-counter {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0 12px;
 }
 
 /* Dynamic Inputs */
@@ -238,9 +302,8 @@ body {
 }
 
 .pdf-checkbox:focus {
-    outline: 2px solid #3498db !important;
-    background: #ffffff !important;
-    box-shadow: 0 0 0 1px rgba(52, 152, 219, 0.2) !important;
+    outline: none;
+    background: #e9ecff !important;
 }
 
 .pdf-checkbox.existing-field {
@@ -268,20 +331,21 @@ body {
 
 /* Read-only fields */
 .pdf-input[readonly] {
-    background: #f5f6fa;
-    border: none;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     cursor: default;
+    opacity: 0.7;
 }
 
 .pdf-input[readonly]:hover {
-    background: #f5f6fa;
+    background: rgba(255, 255, 255, 0.85);
 }
 
 .pdf-input[readonly]:focus {
     background: #ffffff !important;
-    outline: 2px solid #95a5a6 !important;
-    border: none !important;
-    box-shadow: 0 0 0 1px rgba(149, 165, 166, 0.2) !important;
+    outline: none !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Forzar estilos de focus para todos los inputs del PDF */
@@ -295,31 +359,35 @@ input.pdf-checkbox:focus {
 /* Context Menu */
 .context-menu {
     position: fixed;
-    background: white;
-    border: 1px solid #e1e8ed;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: rgba(21, 25, 36, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(64, 255, 35, 0.2);
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    min-width: 140px;
+    min-width: 160px;
     overflow: hidden;
 }
 
 .context-item {
-    padding: 10px 16px;
+    padding: 12px 18px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
-    font-size: 14px;
+    transition: all 0.2s ease;
+    font-size: 13px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
 }
 
 .context-item:hover {
-    background: #f8f9fa;
+    background: rgba(64, 255, 35, 0.1);
+    color: #40ff23;
 }
 
 .context-item:active {
-    background: #e9ecef;
+    background: rgba(64, 255, 35, 0.2);
 }
 
 /* Modal */
@@ -329,7 +397,8 @@ input.pdf-checkbox:focus {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(21, 25, 36, 0.8);
+    backdrop-filter: blur(10px);
     z-index: 1002;
     display: flex;
     justify-content: center;
@@ -337,19 +406,22 @@ input.pdf-checkbox:focus {
 }
 
 .modal-content {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    padding: 24px;
-    min-width: 350px;
+    background: rgba(21, 25, 36, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(64, 255, 35, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    padding: 28px;
+    min-width: 380px;
     max-width: 90%;
 }
 
 .modal-content h4 {
-    margin-bottom: 20px;
-    color: #34495e;
-    font-weight: 600;
+    margin-bottom: 24px;
+    color: #ffffff;
+    font-weight: 500;
     text-align: center;
+    font-size: 18px;
 }
 
 /* Properties Panel */
@@ -358,54 +430,62 @@ input.pdf-checkbox:focus {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
-    border: 1px solid #e1e8ed;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    background: rgba(21, 25, 36, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(64, 255, 35, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     z-index: 1001;
-    padding: 20px;
-    min-width: 300px;
+    padding: 24px;
+    min-width: 320px;
 }
 
 .properties-panel h4 {
-    margin-bottom: 16px;
-    color: #34495e;
-    font-weight: 600;
+    margin-bottom: 20px;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 16px;
 }
 
 .property-group {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .property-group label {
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     font-weight: 500;
-    color: #34495e;
-    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .property-group input,
 .property-group select {
     width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
+    padding: 12px 16px;
+    border: 1px solid rgba(64, 255, 35, 0.3);
+    border-radius: 8px;
+    font-size: 13px;
     font-family: inherit;
+    background: rgba(64, 255, 35, 0.05);
+    color: #ffffff;
+    font-weight: 500;
 }
 
 .property-group input:focus,
 .property-group select:focus {
     outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    border-color: #40ff23;
+    box-shadow: 0 0 0 3px rgba(64, 255, 35, 0.2);
+    background: rgba(64, 255, 35, 0.08);
 }
 
 .property-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 12px;
+    margin-top: 24px;
     justify-content: flex-end;
 }
 
@@ -416,24 +496,35 @@ input.pdf-checkbox:focus {
 
 .property-group input[type="number"]:focus {
     outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    border-color: #40ff23;
+    box-shadow: 0 0 0 3px rgba(64, 255, 35, 0.2);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .toolbar {
         flex-direction: column;
-        gap: 12px;
-        padding: 12px;
+        gap: 16px;
+        padding: 16px;
     }
 
     .toolbar-section {
         justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .navigation {
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .nav-section {
+        justify-content: center;
     }
 
     .pdf-container {
-        padding: 10px;
+        padding: 12px;
     }
 
     .properties-panel {
@@ -453,19 +544,21 @@ input.pdf-checkbox:focus {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 40px;
-    color: #7f8c8d;
+    padding: 60px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+    font-size: 14px;
 }
 
 .loading:after {
     content: "";
-    width: 20px;
-    height: 20px;
-    border: 2px solid #3498db;
-    border-top: 2px solid transparent;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(64, 255, 35, 0.3);
+    border-top: 3px solid #40ff23;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-left: 8px;
+    margin-left: 12px;
 }
 
 @keyframes spin {
@@ -476,8 +569,50 @@ input.pdf-checkbox:focus {
 /* Highlight effect for adding fields */
 .adding-field {
     cursor: crosshair !important;
+    position: relative;
+}
+
+.adding-field::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(64, 255, 35, 0.05);
+    border: 2px dashed rgba(64, 255, 35, 0.3);
+    border-radius: 8px;
+    pointer-events: none;
+    animation: pulse 2s infinite;
 }
 
 .adding-field .pdf-input {
     pointer-events: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(64, 255, 35, 0.3);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(64, 255, 35, 0.5);
 }

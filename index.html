@@ -15,25 +15,19 @@
             <div class="toolbar-section">
                 <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
                 <button id="uploadBtn" class="btn btn-primary">
-                    📄 Subir PDF
+                    Subir PDF
                 </button>
                 <button id="addFieldBtn" class="btn btn-secondary" disabled>
-                    ➕ Modo Agregar Campo
-                </button>
-                <button id="savePdfBtn" class="btn btn-success" disabled>
-                    � Descargar PDF
-                </button>
-                <button id="saveJsonBtn" class="btn btn-secondary" disabled>
-                    📋 Exportar JSON
-                </button>
-                <button id="diagnosticBtn" class="btn btn-info" disabled style="font-size: 12px;">
-                    🔍 Diagnóstico
+                    Añadir Input
                 </button>
             </div>
             <div class="toolbar-section">
                 <span id="fileName" class="file-name"></span>
                 <span id="pageInfo" class="page-info"></span>
                 <span id="fieldsInfo" class="fields-info" style="display: none;"></span>
+                <button id="newPdfBtn" class="btn btn-small btn-secondary" style="display: none;">
+                    Nuevo PDF
+                </button>
             </div>
         </div>
 
@@ -41,24 +35,33 @@
         <div class="pdf-container">
             <div class="pdf-viewer" id="pdfViewer">
                 <div class="no-pdf">
-                    <div class="no-pdf-icon">📄</div>
-                    <h3>No hay PDF cargado</h3>
-                    <p>Haz clic en "Subir PDF" para comenzar</p>
+                    <div class="no-pdf-icon">PDF</div>
+                    <h3>Editor de Inputs en PDF</h3>
+                    <p>Selecciona un archivo PDF para comenzar a editar</p>
                 </div>
             </div>
         </div>
 
         <!-- Page Navigation -->
         <div class="navigation" id="navigation" style="display: none;">
-            <button id="prevPage" class="btn btn-nav">◀ Anterior</button>
-            <span id="pageNum">1</span> / <span id="pageCount">1</span>
-            <button id="nextPage" class="btn btn-nav">Siguiente ▶</button>
+            <div class="nav-section">
+                <button id="prevPage" class="btn btn-nav">Anterior</button>
+                <span class="page-counter">
+                    <span id="pageNum">1</span> / <span id="pageCount">1</span>
+                </span>
+                <button id="nextPage" class="btn btn-nav">Siguiente</button>
+            </div>
+            <div class="nav-section">
+                <button id="savePdfBtn" class="btn btn-download" disabled>
+                    Descargar PDF
+                </button>
+            </div>
         </div>
 
         <!-- Context Menu -->
         <div id="contextMenu" class="context-menu" style="display: none;">
-            <div class="context-item" data-action="edit">✏️ Editar</div>
-            <div class="context-item" data-action="delete">🗑️ Eliminar</div>
+            <div class="context-item" data-action="edit">Editar</div>
+            <div class="context-item" data-action="delete">Eliminar</div>
         </div>
 
         <!-- New Field Modal -->
