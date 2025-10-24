@@ -15,6 +15,7 @@ class PDFInputEditor {
         this.inputCounter = 0;
         this.selectedInput = null;
         this.dragData = null;
+        this.pendingFieldPosition = null;
 
         this.init();
     }
@@ -62,7 +63,13 @@ class PDFInputEditor {
             inputValue: document.getElementById('inputValue'),
             inputType: document.getElementById('inputType'),
             applyProperties: document.getElementById('applyProperties'),
-            cancelProperties: document.getElementById('cancelProperties')
+            cancelProperties: document.getElementById('cancelProperties'),
+            newFieldModal: document.getElementById('newFieldModal'),
+            newFieldName: document.getElementById('newFieldName'),
+            newFieldType: document.getElementById('newFieldType'),
+            newFieldValue: document.getElementById('newFieldValue'),
+            createFieldBtn: document.getElementById('createFieldBtn'),
+            cancelFieldBtn: document.getElementById('cancelFieldBtn')
         };
     }
 
@@ -116,7 +123,9 @@ class PDFInputEditor {
         // Context menu
         document.addEventListener('click', (e) => {
             this.hideContextMenu();
-            this.hidePropertiesPanel();
+            if (!e.target.closest('#propertiesPanel')) {
+                this.hidePropertiesPanel();
+            }
         });
 
         this.elements.contextMenu.addEventListener('click', (e) => {
@@ -134,6 +143,36 @@ class PDFInputEditor {
 
         this.elements.cancelProperties.addEventListener('click', () => {
             this.hidePropertiesPanel();
+        });
+
+        // New field modal
+        this.elements.createFieldBtn.addEventListener('click', () => {
+            this.createNewFieldFromModal();
+        });
+
+        this.elements.cancelFieldBtn.addEventListener('click', () => {
+            this.hideNewFieldModal();
+        });
+
+        // Close modal when clicking outside
+        this.elements.newFieldModal.addEventListener('click', (e) => {
+            if (e.target === this.elements.newFieldModal) {
+                this.hideNewFieldModal();
+            }
+        });
+
+        // Handle Enter key in modal inputs
+        [this.elements.newFieldName, this.elements.newFieldValue].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.createNewFieldFromModal();
+                }
+            });
+        });
+
+        // Update value field placeholder when type changes
+        this.elements.newFieldType.addEventListener('change', (e) => {
+            this.updateValueFieldForType(e.target.value);
         });
 
         // Global drag handlers
@@ -259,16 +298,31 @@ class PDFInputEditor {
                             fieldType = annotation.multiLine ? 'textarea' : 'text';
                         } else if (annotation.fieldType === 'Ch') {
                             fieldType = 'text'; // Combobox/Listbox como text por ahora
+                        } else if (annotation.fieldType === 'Btn') {
+                            // Determinar si es checkbox, radio button o push button
+                            if (annotation.checkBox || annotation.radioButton) {
+                                fieldType = 'checkbox';
+                            } else {
+                                fieldType = 'text'; // Push button como text por ahora
+                            }
                         }
                         
                         // Obtener valor del campo
                         let fieldValue = '';
-                        if (annotation.fieldValue) {
-                            fieldValue = annotation.fieldValue;
-                        } else if (annotation.buttonValue) {
-                            fieldValue = annotation.buttonValue;
-                        } else if (annotation.alternativeText) {
-                            fieldValue = annotation.alternativeText;
+                        if (fieldType === 'checkbox') {
+                            // Para checkboxes, determinar si está marcado
+                            fieldValue = (annotation.fieldValue === 'Yes' || 
+                                        annotation.fieldValue === 'On' || 
+                                        annotation.fieldValue === true ||
+                                        annotation.checkBox === true) ? 'true' : 'false';
+                        } else {
+                            if (annotation.fieldValue) {
+                                fieldValue = annotation.fieldValue;
+                            } else if (annotation.buttonValue) {
+                                fieldValue = annotation.buttonValue;
+                            } else if (annotation.alternativeText) {
+                                fieldValue = annotation.alternativeText;
+                            }
                         }
                         
                         const inputData = {
@@ -383,44 +437,46 @@ class PDFInputEditor {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
 
-        this.inputCounter++;
-        const inputData = {
-            id: `input_${this.inputCounter}`,
-            name: `campo_${this.inputCounter}`,
-            type: 'text',
-            page: this.currentPage,
-            x: x,
-            y: y,
-            width: 120,
-            height: 30,
-            value: ''
-        };
-
-        this.inputs.push(inputData);
-        this.createInputElement(inputData);
+        // Guardar la posición para crear el campo después
+        this.pendingFieldPosition = { x, y };
         
-        // Exit add mode after adding
+        // Mostrar modal para configurar el campo
+        this.showNewFieldModal();
+        
+        // Exit add mode
         this.toggleAddFieldMode();
     }
 
     createInputElement(inputData) {
         const inputElement = document.createElement(inputData.type === 'textarea' ? 'textarea' : 'input');
         
-        if (inputData.type !== 'textarea') {
+        if (inputData.type === 'checkbox') {
+            inputElement.type = 'checkbox';
+        } else if (inputData.type !== 'textarea') {
             inputElement.type = 'text';
         }
 
         inputElement.id = inputData.id;
         
         // Diferentes estilos para campos existentes vs nuevos
-        let className = `pdf-input ${inputData.type === 'textarea' ? 'pdf-textarea' : ''}`;
+        let className = `pdf-input`;
+        if (inputData.type === 'textarea') {
+            className += ' pdf-textarea';
+        } else if (inputData.type === 'checkbox') {
+            className += ' pdf-checkbox';
+        }
         if (inputData.isExisting) {
             className += ' existing-field';
         }
         inputElement.className = className;
         
-        inputElement.value = inputData.value;
-        inputElement.placeholder = inputData.name;
+        if (inputData.type === 'checkbox') {
+            inputElement.checked = inputData.value === 'true' || inputData.value === true;
+            inputElement.title = inputData.name; // Tooltip con el nombre
+        } else {
+            inputElement.value = inputData.value;
+            inputElement.placeholder = inputData.name;
+        }
         
         // Si es un campo de solo lectura
         if (inputData.readonly) {
@@ -445,7 +501,42 @@ class PDFInputEditor {
         });
 
         inputElement.addEventListener('input', (e) => {
-            inputData.value = e.target.value;
+            if (inputData.type === 'checkbox') {
+                inputData.value = e.target.checked ? 'true' : 'false';
+            } else {
+                inputData.value = e.target.value;
+            }
+        });
+
+        // Para checkboxes, también manejar el evento change
+        if (inputData.type === 'checkbox') {
+            inputElement.addEventListener('change', (e) => {
+                inputData.value = e.target.checked ? 'true' : 'false';
+            });
+        }
+
+        // Manejar focus para cambiar color a blanco
+        inputElement.addEventListener('focus', (e) => {
+            e.target.style.backgroundColor = '#ffffff';
+        });
+
+        // Restaurar color original cuando pierde el focus
+        inputElement.addEventListener('blur', (e) => {
+            if (inputData.type === 'checkbox') {
+                if (inputData.isExisting) {
+                    e.target.style.backgroundColor = '#e9f7ef';
+                } else {
+                    e.target.style.backgroundColor = '#e9ecff';
+                }
+            } else {
+                if (inputData.readonly) {
+                    e.target.style.backgroundColor = '#f5f6fa';
+                } else if (inputData.isExisting) {
+                    e.target.style.backgroundColor = '#e9f7ef';
+                } else {
+                    e.target.style.backgroundColor = '#e9ecff';
+                }
+            }
         });
 
         inputElement.addEventListener('dblclick', (e) => {
@@ -539,6 +630,86 @@ class PDFInputEditor {
         this.selectedInput = null;
     }
 
+    showNewFieldModal() {
+        // Limpiar el formulario
+        this.elements.newFieldName.value = '';
+        this.elements.newFieldType.value = 'text';
+        this.elements.newFieldValue.value = '';
+        
+        // Actualizar placeholder del valor
+        this.updateValueFieldForType('text');
+        
+        // Mostrar modal
+        this.elements.newFieldModal.style.display = 'flex';
+        
+        // Enfocar el input de nombre
+        setTimeout(() => {
+            this.elements.newFieldName.focus();
+        }, 100);
+    }
+
+    updateValueFieldForType(fieldType) {
+        const valueField = this.elements.newFieldValue;
+        
+        if (fieldType === 'checkbox') {
+            valueField.placeholder = 'true o false (marcado/desmarcado)';
+        } else if (fieldType === 'textarea') {
+            valueField.placeholder = 'Texto inicial (multilínea)';
+        } else {
+            valueField.placeholder = 'Valor inicial';
+        }
+    }
+
+    hideNewFieldModal() {
+        this.elements.newFieldModal.style.display = 'none';
+        this.pendingFieldPosition = null;
+    }
+
+    createNewFieldFromModal() {
+        const fieldName = this.elements.newFieldName.value.trim();
+        
+        // Validar que se ingresó un nombre
+        if (!fieldName) {
+            alert('Por favor ingresa un nombre para el campo');
+            this.elements.newFieldName.focus();
+            return;
+        }
+
+        // Validar que el nombre no esté duplicado
+        const existingField = this.inputs.find(input => input.name === fieldName);
+        if (existingField) {
+            alert(`Ya existe un campo con el nombre "${fieldName}". Por favor elige un nombre diferente.`);
+            this.elements.newFieldName.focus();
+            return;
+        }
+
+        // Crear el campo con los datos del modal
+        this.inputCounter++;
+        const fieldType = this.elements.newFieldType.value;
+        const inputData = {
+            id: `input_${this.inputCounter}`,
+            name: fieldName,
+            type: fieldType,
+            page: this.currentPage,
+            x: this.pendingFieldPosition.x,
+            y: this.pendingFieldPosition.y,
+            width: fieldType === 'textarea' ? 200 : fieldType === 'checkbox' ? 20 : 120,
+            height: fieldType === 'textarea' ? 80 : fieldType === 'checkbox' ? 20 : 30,
+            value: fieldType === 'checkbox' ? (this.elements.newFieldValue.value.toLowerCase() === 'true' ? 'true' : 'false') : this.elements.newFieldValue.value || ''
+        };
+
+        this.inputs.push(inputData);
+        this.createInputElement(inputData);
+        
+        // Ocultar modal
+        this.hideNewFieldModal();
+        
+        // Actualizar información de campos
+        this.updateFieldsInfo();
+        
+        console.log(`✅ Campo "${fieldName}" creado exitosamente`);
+    }
+
     applyInputProperties() {
         if (!this.selectedInput) return;
 
@@ -549,14 +720,37 @@ class PDFInputEditor {
 
         // If type changed, recreate element
         if (oldType !== this.selectedInput.type) {
+            // Ajustar dimensiones según el nuevo tipo
+            if (this.selectedInput.type === 'checkbox') {
+                this.selectedInput.width = 20;
+                this.selectedInput.height = 20;
+                // Convertir valor a formato checkbox
+                if (this.selectedInput.value && this.selectedInput.value !== 'false') {
+                    this.selectedInput.value = 'true';
+                } else {
+                    this.selectedInput.value = 'false';
+                }
+            } else if (this.selectedInput.type === 'textarea') {
+                this.selectedInput.width = Math.max(this.selectedInput.width, 200);
+                this.selectedInput.height = Math.max(this.selectedInput.height, 80);
+            } else if (this.selectedInput.type === 'text') {
+                this.selectedInput.width = Math.max(this.selectedInput.width, 120);
+                this.selectedInput.height = 30;
+            }
+            
             this.deleteInputElement(this.selectedInput);
             this.createInputElement(this.selectedInput);
         } else {
             // Just update existing element
             const element = document.getElementById(this.selectedInput.id);
             if (element) {
-                element.value = this.selectedInput.value;
-                element.placeholder = this.selectedInput.name;
+                if (this.selectedInput.type === 'checkbox') {
+                    element.checked = this.selectedInput.value === 'true';
+                    element.title = this.selectedInput.name;
+                } else {
+                    element.value = this.selectedInput.value;
+                    element.placeholder = this.selectedInput.name;
+                }
             }
         }
 
@@ -839,7 +1033,32 @@ class PDFInputEditor {
         try {
             const fieldName = input.name + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
             
-            if (input.type === 'textarea') {
+            // Definir colores según si es campo existente o nuevo
+            const isExisting = input.isExisting;
+            const backgroundColor = isExisting 
+                ? PDFLib.rgb(0.914, 0.969, 0.937) // #e9f7ef para campos existentes
+                : PDFLib.rgb(0.914, 0.925, 1);    // #e9ecff para campos nuevos
+            
+            if (input.type === 'checkbox') {
+                // Crear campo de checkbox
+                const checkBox = form.createCheckBox(fieldName);
+                checkBox.addToPage(page, {
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height,
+                    borderWidth: 0, // Sin borde
+                    backgroundColor: backgroundColor,
+                });
+                
+                // Marcar el checkbox si el valor es true
+                if (input.value === 'true' || input.value === true) {
+                    checkBox.check();
+                } else {
+                    checkBox.uncheck();
+                }
+                
+            } else if (input.type === 'textarea') {
                 // Crear campo de texto multilínea
                 const textField = form.createTextField(fieldName);
                 textField.addToPage(page, {
@@ -847,9 +1066,8 @@ class PDFInputEditor {
                     y: y,
                     width: width,
                     height: height,
-                    borderWidth: 1,
-                    borderColor: PDFLib.rgb(0.2, 0.4, 0.8),
-                    backgroundColor: PDFLib.rgb(0.95, 0.95, 1),
+                    borderWidth: 0, // Sin borde
+                    backgroundColor: backgroundColor,
                 });
                 
                 if (input.value) {
@@ -866,9 +1084,8 @@ class PDFInputEditor {
                     y: y,
                     width: width,
                     height: height,
-                    borderWidth: 1,
-                    borderColor: PDFLib.rgb(0.2, 0.4, 0.8),
-                    backgroundColor: PDFLib.rgb(0.95, 0.95, 1),
+                    borderWidth: 0, // Sin borde
+                    backgroundColor: backgroundColor,
                 });
                 
                 if (input.value) {

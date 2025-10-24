@@ -61,6 +61,33 @@
             <div class="context-item" data-action="delete">🗑️ Eliminar</div>
         </div>
 
+        <!-- New Field Modal -->
+        <div id="newFieldModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h4>Nuevo Campo</h4>
+                <div class="property-group">
+                    <label>Nombre del campo:</label>
+                    <input type="text" id="newFieldName" placeholder="Ej: nombre, email, fecha_nacimiento">
+                </div>
+                <div class="property-group">
+                    <label>Tipo:</label>
+                    <select id="newFieldType">
+                        <option value="text">Texto</option>
+                        <option value="textarea">Área de texto</option>
+                        <option value="checkbox">Checkbox</option>
+                    </select>
+                </div>
+                <div class="property-group">
+                    <label>Valor por defecto (opcional):</label>
+                    <input type="text" id="newFieldValue" placeholder="Valor inicial">
+                </div>
+                <div class="property-actions">
+                    <button id="createFieldBtn" class="btn btn-small btn-primary">Crear Campo</button>
+                    <button id="cancelFieldBtn" class="btn btn-small btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Input Properties Panel -->
         <div id="propertiesPanel" class="properties-panel" style="display: none;">
             <h4>Propiedades del Input</h4>
@@ -77,6 +104,7 @@
                 <select id="inputType">
                     <option value="text">Texto</option>
                     <option value="textarea">Área de texto</option>
+                    <option value="checkbox">Checkbox</option>
                 </select>
             </div>
             <div class="property-actions">
