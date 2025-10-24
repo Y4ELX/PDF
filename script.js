@@ -62,6 +62,7 @@ class PDFInputEditor {
             inputName: document.getElementById('inputName'),
             inputValue: document.getElementById('inputValue'),
             inputType: document.getElementById('inputType'),
+            inputWidth: document.getElementById('inputWidth'),
             applyProperties: document.getElementById('applyProperties'),
             cancelProperties: document.getElementById('cancelProperties'),
             newFieldModal: document.getElementById('newFieldModal'),
@@ -618,9 +619,16 @@ class PDFInputEditor {
     editInputProperties(inputData) {
         this.selectedInput = inputData;
         
+        // Obtener dimensiones actuales del elemento
+        const element = document.getElementById(inputData.id);
+        if (element) {
+            inputData.width = element.offsetWidth;
+        }
+        
         this.elements.inputName.value = inputData.name;
         this.elements.inputValue.value = inputData.value;
         this.elements.inputType.value = inputData.type;
+        this.elements.inputWidth.value = Math.round(inputData.width || 120);
         
         this.elements.propertiesPanel.style.display = 'block';
     }
@@ -717,6 +725,12 @@ class PDFInputEditor {
         this.selectedInput.name = this.elements.inputName.value || this.selectedInput.name;
         this.selectedInput.value = this.elements.inputValue.value;
         this.selectedInput.type = this.elements.inputType.value;
+        
+        // Aplicar nueva anchura si se especificó
+        const newWidth = parseInt(this.elements.inputWidth.value);
+        if (!isNaN(newWidth) && newWidth > 0) {
+            this.selectedInput.width = Math.max(20, Math.min(2000, newWidth));
+        }
 
         // If type changed, recreate element
         if (oldType !== this.selectedInput.type) {
@@ -750,6 +764,12 @@ class PDFInputEditor {
                 } else {
                     element.value = this.selectedInput.value;
                     element.placeholder = this.selectedInput.name;
+                }
+                
+                // Aplicar nueva anchura
+                if (this.selectedInput.width) {
+                    element.style.width = this.selectedInput.width + 'px';
+                    console.log(`📏 Campo "${this.selectedInput.name}" - anchura cambiada a: ${this.selectedInput.width}px`);
                 }
             }
         }

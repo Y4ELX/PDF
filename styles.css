@@ -200,7 +200,7 @@ body {
     font-family: inherit;
     z-index: 100;
     cursor: move;
-    min-width: 120px;
+    min-width: 10px;
     min-height: 30px;
     resize: both;
     overflow: hidden;
@@ -225,8 +225,8 @@ body {
 
 /* Checkbox Inputs */
 .pdf-checkbox {
-    min-width: 20px !important;
-    min-height: 20px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
     width: 20px !important;
     height: 20px !important;
     padding: 0 !important;
@@ -407,6 +407,17 @@ input.pdf-checkbox:focus {
     gap: 8px;
     margin-top: 16px;
     justify-content: flex-end;
+}
+
+/* Estilos específicos para campos de número (anchura) */
+.property-group input[type="number"] {
+    text-align: right;
+}
+
+.property-group input[type="number"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
 /* Responsive */
