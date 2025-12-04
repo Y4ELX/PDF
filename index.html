@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor de Inputs en PDF</title>
+    <link rel="shortcut icon" href="assets/pdficon.png" type="image/x-icon">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -19,6 +20,9 @@
                 </button>
                 <button id="addFieldBtn" class="btn btn-secondary" disabled>
                     Añadir Input
+                </button>
+                <button id="clearFieldsBtn" class="btn btn-small btn-delete" disabled style="display: none;">
+                    Limpiar Campos
                 </button>
             </div>
             <div class="toolbar-section">
@@ -126,6 +130,7 @@
             </div>
             <div class="property-actions">
                 <button id="applyProperties" class="btn btn-small btn-primary">Aplicar</button>
+                <button id="deleteInputBtn" class="btn btn-small btn-delete">Eliminar</button>
                 <button id="cancelProperties" class="btn btn-small btn-secondary">Cancelar</button>
             </div>
         </div>

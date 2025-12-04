@@ -48,8 +48,19 @@ class PDFInputEditor {
             
             fieldsInfoElement.textContent = `${existingCount} existentes + ${newCount} nuevos (${currentPageFields} en esta página)`;
             fieldsInfoElement.style.display = 'inline';
+            
+            // Mostrar botón de limpiar campos si hay campos
+            if (this.elements.clearFieldsBtn) {
+                this.elements.clearFieldsBtn.style.display = 'inline-flex';
+                this.elements.clearFieldsBtn.disabled = false;
+            }
         } else {
             fieldsInfoElement.style.display = 'none';
+            
+            // Ocultar botón de limpiar campos si no hay campos
+            if (this.elements.clearFieldsBtn) {
+                this.elements.clearFieldsBtn.style.display = 'none';
+            }
         }
     }
 
@@ -78,6 +89,7 @@ class PDFInputEditor {
             inputWidth: document.getElementById('inputWidth'),
             applyProperties: document.getElementById('applyProperties'),
             cancelProperties: document.getElementById('cancelProperties'),
+            deleteInputBtn: document.getElementById('deleteInputBtn'),
             newFieldModal: document.getElementById('newFieldModal'),
             newFieldName: document.getElementById('newFieldName'),
             newFieldType: document.getElementById('newFieldType'),
@@ -88,7 +100,8 @@ class PDFInputEditor {
             zoomOutBtn: document.getElementById('zoomOut'),
             fitPageBtn: document.getElementById('zoomFit'),
             zoomLevel: document.getElementById('zoomLevel'),
-            pdfContainer: document.querySelector('.pdf-container')
+            pdfContainer: document.querySelector('.pdf-container'),
+            clearFieldsBtn: document.getElementById('clearFieldsBtn')
         };
     }
 
@@ -120,6 +133,13 @@ class PDFInputEditor {
         this.elements.savePdfBtn.addEventListener('click', () => {
             this.savePdfWithFields();
         });
+
+        // Clear fields button
+        if (this.elements.clearFieldsBtn) {
+            this.elements.clearFieldsBtn.addEventListener('click', () => {
+                this.showClearFieldsDialog();
+            });
+        }
 
         // Navigation
         this.elements.prevPage.addEventListener('click', () => {
@@ -160,6 +180,16 @@ class PDFInputEditor {
         this.elements.cancelProperties.addEventListener('click', () => {
             this.hidePropertiesPanel();
         });
+
+        // Delete input button
+        if (this.elements.deleteInputBtn) {
+            this.elements.deleteInputBtn.addEventListener('click', () => {
+                if (this.selectedInput) {
+                    this.deleteInput(this.selectedInput);
+                    this.hidePropertiesPanel();
+                }
+            });
+        }
 
         // Zoom controls - con verificación de existencia
         if (this.elements.zoomInBtn) {
@@ -687,6 +717,12 @@ class PDFInputEditor {
 
     showContextMenu(event, inputData) {
         this.selectedInput = inputData;
+        
+        // Personalizar el menú según el tipo de campo
+        const fieldType = inputData.isExisting ? 'existente' : 'nuevo';
+        const deleteItem = this.elements.contextMenu.querySelector('[data-action="delete"]');
+        deleteItem.textContent = `Eliminar campo ${fieldType}`;
+        
         this.elements.contextMenu.style.display = 'block';
         this.elements.contextMenu.style.left = event.pageX + 'px';
         this.elements.contextMenu.style.top = event.pageY + 'px';
@@ -724,6 +760,16 @@ class PDFInputEditor {
         this.elements.inputValue.value = inputData.value;
         this.elements.inputType.value = inputData.type;
         this.elements.inputWidth.value = Math.round(inputData.width || 120);
+        
+        // Actualizar el título del panel para mostrar el tipo de campo
+        const panelTitle = this.elements.propertiesPanel.querySelector('h4');
+        const fieldType = inputData.isExisting ? 'existente' : 'nuevo';
+        panelTitle.textContent = `Propiedades del Campo ${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)}`;
+        
+        // Cambiar el texto del botón eliminar según el tipo
+        if (this.elements.deleteInputBtn) {
+            this.elements.deleteInputBtn.textContent = inputData.isExisting ? 'Eliminar Campo Existente' : 'Eliminar Campo Nuevo';
+        }
         
         this.elements.propertiesPanel.style.display = 'block';
     }
@@ -879,10 +925,31 @@ class PDFInputEditor {
     }
 
     deleteInput(inputData) {
+        // Mostrar confirmación de eliminación
+        const fieldType = inputData.isExisting ? 'existente' : 'nuevo';
+        const confirmMessage = `¿Estás seguro de que deseas eliminar el campo "${inputData.name}"?\n\n` +
+                              `Tipo: Campo ${fieldType}\n` +
+                              `Página: ${inputData.page}\n\n` +
+                              `Esta acción no se puede deshacer.`;
+        
+        if (!confirm(confirmMessage)) {
+            return; // El usuario canceló la eliminación
+        }
+
+        // Proceder con la eliminación
         const index = this.inputs.findIndex(input => input.id === inputData.id);
         if (index > -1) {
             this.inputs.splice(index, 1);
             this.deleteInputElement(inputData);
+            this.updateFieldsInfo(); // Actualizar contador de campos
+            
+            // Log de confirmación
+            console.log(`🗑️ Campo "${inputData.name}" (${fieldType}) eliminado exitosamente`);
+            
+            // Mostrar feedback visual temporal
+            this.showProgress(`Campo "${inputData.name}" eliminado`);
+        } else {
+            console.error('Error: No se pudo encontrar el campo para eliminar');
         }
     }
 
@@ -947,6 +1014,12 @@ class PDFInputEditor {
         this.elements.addFieldBtn.disabled = true;
         this.elements.savePdfBtn.disabled = true;
         
+        // Ocultar botón de limpiar campos
+        if (this.elements.clearFieldsBtn) {
+            this.elements.clearFieldsBtn.style.display = 'none';
+            this.elements.clearFieldsBtn.disabled = true;
+        }
+        
         // Reset add field button
         this.elements.addFieldBtn.textContent = 'Añadir Input';
         this.elements.addFieldBtn.classList.remove('active');
@@ -973,6 +1046,35 @@ class PDFInputEditor {
         `;
 
         console.log('Editor reiniciado');
+    }
+
+    showClearFieldsDialog() {
+        const existingFields = this.inputs.filter(input => input.isExisting);
+        const newFields = this.inputs.filter(input => !input.isExisting);
+        
+        let message = '¿Qué campos deseas eliminar?\n\n';
+        
+        if (existingFields.length > 0) {
+            message += `📋 Campos existentes: ${existingFields.length}\n`;
+        }
+        
+        if (newFields.length > 0) {
+            message += `✨ Campos nuevos: ${newFields.length}\n`;
+        }
+        
+        message += '\nOpciones:\n';
+        message += '• ACEPTAR: Eliminar TODOS los campos\n';
+        message += '• CANCELAR: No eliminar nada';
+        
+        if (confirm(message)) {
+            this.clearAllInputs();
+            this.updateFieldsInfo();
+            console.log('🗑️ Todos los campos han sido eliminados');
+            this.showProgress('Todos los campos eliminados');
+            
+            // Ocultar botón de limpiar campos
+            this.elements.clearFieldsBtn.style.display = 'none';
+        }
     }
 
     saveInputsAsJSON() {

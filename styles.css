@@ -87,6 +87,13 @@ body {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-color: #e6e6e6;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
 .btn-success {
     background: rgba(64, 255, 35, 0.2);
     color: #40ff23;
@@ -146,6 +153,20 @@ body {
     background: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-delete {
+    background: rgba(255, 69, 58, 0.1);
+    color: #ff453a;
+    border-color: rgba(255, 69, 58, 0.3);
+    padding: 12px 24px;
+}
+
+.btn-delete:hover {
+    background: rgba(255, 69, 58, 0.2);
+    border-color: #ff453a;
+    box-shadow: 0 0 20px rgba(255, 69, 58, 0.3);
+    transform: translateY(-2px);
 }
 
 .file-name {
