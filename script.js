@@ -596,16 +596,14 @@ class PDFInputEditor {
 
         inputElement.id = inputData.id;
         
-        // Diferentes estilos para campos existentes vs nuevos
+        // Estilos unificados para todos los campos (existentes y nuevos)
         let className = `pdf-input`;
         if (inputData.type === 'textarea') {
             className += ' pdf-textarea';
         } else if (inputData.type === 'checkbox') {
             className += ' pdf-checkbox';
         }
-        if (inputData.isExisting) {
-            className += ' existing-field';
-        }
+        // Ya no agregamos 'existing-field' - todos los campos tendrán el mismo estilo
         inputElement.className = className;
         
         if (inputData.type === 'checkbox') {

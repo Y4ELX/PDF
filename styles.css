@@ -378,32 +378,6 @@ body {
     border-color: #5bb3e6 !important;
 }
 
-.pdf-checkbox.existing-field {
-    accent-color: #4da6d9;
-    background: #e6f3ff !important;
-    border-color: #99ccff !important;
-}
-
-/* Existing PDF Fields */
-.pdf-input.existing-field {
-    background: #e6f3ff;
-    border: 2px solid #99ccff;
-    border-radius: 4px;
-}
-
-.pdf-input.existing-field:focus {
-    background: #ffffff !important;
-    outline: 2px solid #27ae60 !important;
-    border: none !important;
-    cursor: text;
-    box-shadow: 0 0 0 1px rgba(39, 174, 96, 0.2) !important;
-}
-
-.pdf-input.existing-field:hover {
-    background: #cce7ff;
-    border-color: #66b3ff;
-}
-
 /* Read-only fields */
 .pdf-input[readonly] {
     background: rgba(255, 255, 255, 0.8);
@@ -416,7 +390,6 @@ body {
 }
 
 .pdf-input[readonly]:focus {
-    background: #ffffff !important;
     outline: none !important;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
 }
@@ -425,7 +398,6 @@ body {
 input.pdf-input:focus,
 textarea.pdf-input:focus,
 input.pdf-checkbox:focus {
-    background-color: #ffffff !important;
     border: none !important;
 }
 
@@ -707,14 +679,7 @@ input.pdf-checkbox {
 input.pdf-input:focus,
 textarea.pdf-input:focus,
 input.pdf-checkbox:focus {
-    background-color: #ffffff !important; /* Color blanco mientras se escribe */
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-}
-
-/* Si ya hay texto dentro (para mantener blanco) */
-input.pdf-input:not(:placeholder-shown),
-textarea.pdf-input:not(:placeholder-shown) {
-    background-color: #ffffff !important;
 }
