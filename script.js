@@ -164,13 +164,25 @@ class PDFInputEditor {
             }
         });
 
-        this.elements.contextMenu.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const action = e.target.dataset.action;
-            if (action && this.selectedInput) {
-                this.handleContextAction(action);
-            }
-        });
+        if (this.elements.contextMenu) {
+            console.log('✅ Context menu element found, setting up event listener');
+            this.elements.contextMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log('🖱️ Context menu clicked:', e.target);
+                console.log('📋 Action:', e.target.dataset.action);
+                console.log('🎯 Selected input:', this.selectedInput);
+                
+                const action = e.target.dataset.action;
+                if (action && this.selectedInput) {
+                    console.log('🔥 Executing action:', action);
+                    this.handleContextAction(action);
+                } else {
+                    console.warn('⚠️ Missing action or selected input:', { action, selectedInput: this.selectedInput });
+                }
+            });
+        } else {
+            console.error('❌ Context menu element not found!');
+        }
 
         // Properties panel
         this.elements.applyProperties.addEventListener('click', () => {
@@ -623,6 +635,7 @@ class PDFInputEditor {
 
         inputElement.addEventListener('contextmenu', (e) => {
             e.preventDefault();
+            console.log('🖱️ Right click on input:', inputData.name);
             this.showContextMenu(e, inputData);
         });
 
@@ -716,6 +729,7 @@ class PDFInputEditor {
     }
 
     showContextMenu(event, inputData) {
+        console.log('📋 Showing context menu for input:', inputData);
         this.selectedInput = inputData;
         
         // Personalizar el menú según el tipo de campo
@@ -726,6 +740,9 @@ class PDFInputEditor {
         this.elements.contextMenu.style.display = 'block';
         this.elements.contextMenu.style.left = event.pageX + 'px';
         this.elements.contextMenu.style.top = event.pageY + 'px';
+        
+        console.log('📋 Context menu displayed at:', event.pageX, event.pageY);
+        console.log('🎯 Selected input stored:', this.selectedInput);
     }
 
     hideContextMenu() {
@@ -733,15 +750,25 @@ class PDFInputEditor {
     }
 
     handleContextAction(action) {
-        if (!this.selectedInput) return;
+        console.log('🎬 handleContextAction called with:', action);
+        console.log('🎯 Selected input:', this.selectedInput);
+        
+        if (!this.selectedInput) {
+            console.warn('⚠️ No selected input for action:', action);
+            return;
+        }
 
         switch (action) {
             case 'edit':
+                console.log('✏️ Executing edit action');
                 this.editInputProperties(this.selectedInput);
                 break;
             case 'delete':
+                console.log('🗑️ Executing delete action');
                 this.deleteInput(this.selectedInput);
                 break;
+            default:
+                console.warn('⚠️ Unknown action:', action);
         }
 
         this.hideContextMenu();
@@ -925,6 +952,8 @@ class PDFInputEditor {
     }
 
     deleteInput(inputData) {
+        console.log('🗑️ deleteInput called with:', inputData);
+        
         // Mostrar confirmación de eliminación
         const fieldType = inputData.isExisting ? 'existente' : 'nuevo';
         const confirmMessage = `¿Estás seguro de que deseas eliminar el campo "${inputData.name}"?\n\n` +
@@ -932,10 +961,14 @@ class PDFInputEditor {
                               `Página: ${inputData.page}\n\n` +
                               `Esta acción no se puede deshacer.`;
         
+        console.log('🔔 Showing confirmation dialog');
         if (!confirm(confirmMessage)) {
+            console.log('❌ User canceled deletion');
             return; // El usuario canceló la eliminación
         }
 
+        console.log('✅ User confirmed deletion, proceeding...');
+        
         // Proceder con la eliminación
         const index = this.inputs.findIndex(input => input.id === inputData.id);
         if (index > -1) {

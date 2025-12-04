@@ -325,8 +325,8 @@ body {
 /* Dynamic Inputs */
 .pdf-input {
     position: absolute;
-    background: #e9ecff;
-    border: none;
+    background: #cce7ff;
+    border: 2px solid #87ceeb;
     padding: 6px 8px;
     font-size: 14px;
     font-family: inherit;
@@ -336,6 +336,7 @@ body {
     min-height: 30px;
     resize: both;
     overflow: hidden;
+    border-radius: 4px;
 }
 
 .pdf-input:focus {
@@ -347,7 +348,8 @@ body {
 }
 
 .pdf-input:hover {
-    background: #e9ecff;
+    background: #b3d9ff;
+    border-color: #5bb3e6;
 }
 
 .pdf-textarea {
@@ -363,26 +365,30 @@ body {
     height: 20px !important;
     padding: 0 !important;
     cursor: pointer;
-    accent-color: #3498db;
+    accent-color: #5bb3e6;
     resize: none !important;
-    border: none !important;
-    background: #e9ecff !important;
+    border: 2px solid #87ceeb !important;
+    background: #cce7ff !important;
+    border-radius: 4px;
 }
 
 .pdf-checkbox:focus {
     outline: none;
-    background: #e9ecff !important;
+    background: #b3d9ff !important;
+    border-color: #5bb3e6 !important;
 }
 
 .pdf-checkbox.existing-field {
-    accent-color: #27ae60;
-    background: #e9f7ef !important;
+    accent-color: #4da6d9;
+    background: #e6f3ff !important;
+    border-color: #99ccff !important;
 }
 
 /* Existing PDF Fields */
 .pdf-input.existing-field {
-    background: #e9f7ef;
-    border: none;
+    background: #e6f3ff;
+    border: 2px solid #99ccff;
+    border-radius: 4px;
 }
 
 .pdf-input.existing-field:focus {
@@ -394,7 +400,8 @@ body {
 }
 
 .pdf-input.existing-field:hover {
-    background: #e9ecff;
+    background: #cce7ff;
+    border-color: #66b3ff;
 }
 
 /* Read-only fields */
