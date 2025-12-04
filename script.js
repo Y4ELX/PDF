@@ -972,7 +972,17 @@ class PDFInputEditor {
         // Proceder con la eliminación
         const index = this.inputs.findIndex(input => input.id === inputData.id);
         if (index > -1) {
+            console.log(`📋 ANTES DE ELIMINAR: Array tiene ${this.inputs.length} elementos`);
+            console.log(`🎯 Eliminando elemento en índice ${index}:`, this.inputs[index]);
+            
             this.inputs.splice(index, 1);
+            
+            console.log(`📋 DESPUÉS DE ELIMINAR: Array tiene ${this.inputs.length} elementos`);
+            console.log('📝 Elementos restantes:');
+            this.inputs.forEach((input, i) => {
+                console.log(`  ${i + 1}. ID: ${input.id}, Nombre: ${input.name}`);
+            });
+            
             this.deleteInputElement(inputData);
             this.updateFieldsInfo(); // Actualizar contador de campos
             
@@ -1199,6 +1209,13 @@ class PDFInputEditor {
         try {
             this.showProgress('Iniciando');
             console.log('Iniciando creación de PDF con campos...');
+            console.log('🔍 ESTADO DEL ARRAY this.inputs ANTES DEL EXPORT:');
+            console.log('📊 Número total de inputs:', this.inputs.length);
+            console.log('📝 Lista de inputs:');
+            this.inputs.forEach((input, index) => {
+                console.log(`  ${index + 1}. ID: ${input.id}, Nombre: ${input.name}, Página: ${input.page}, Tipo: ${input.type}`);
+            });
+            console.log('🔍 ==========================================');
             
             // Validar que tenemos el PDF original
             if (!this.originalPdfBytes) {
@@ -1242,6 +1259,35 @@ class PDFInputEditor {
             }
             
             const form = pdfDoc.getForm();
+            
+            // 🗑️ PASO 1: Eliminar campos existentes que no están en nuestro array this.inputs
+            console.log('🗑️ ELIMINANDO CAMPOS NO DESEADOS DEL FORMULARIO ORIGINAL...');
+            const allFormFields = form.getFields();
+            console.log(`📋 Formulario original tiene ${allFormFields.length} campos`);
+            
+            // Crear un Set con los nombres de los campos que queremos conservar
+            const fieldsToKeep = new Set(
+                this.inputs
+                    .filter(input => input.isExisting && input.name)
+                    .map(input => input.name)
+            );
+            console.log(`🔒 Campos a conservar: ${Array.from(fieldsToKeep).join(', ')}`);
+            
+            // Eliminar campos que no están en nuestro array
+            let removedCount = 0;
+            for (const field of allFormFields) {
+                const fieldName = field.getName();
+                if (!fieldsToKeep.has(fieldName)) {
+                    try {
+                        form.removeField(field);
+                        removedCount++;
+                        console.log(`🗑️ Campo eliminado: ${fieldName}`);
+                    } catch (removeError) {
+                        console.warn(`⚠️ No se pudo eliminar campo ${fieldName}:`, removeError);
+                    }
+                }
+            }
+            console.log(`✅ Eliminados ${removedCount} campos no deseados`);
             
             // Get all pages
             const pages = pdfDoc.getPages();
