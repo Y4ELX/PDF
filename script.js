@@ -399,18 +399,29 @@ class PDFInputEditor {
                 console.log(`Página ${pageNum}: ${annotations.length} anotaciones encontradas`);
                 
                 annotations.forEach((annotation, index) => {
-                    console.log('Anotación:', annotation);
+                    console.log('📋 Anotación encontrada:', {
+                        subtype: annotation.subtype,
+                        fieldType: annotation.fieldType,
+                        fieldName: annotation.fieldName,
+                        alternativeText: annotation.alternativeText,
+                        checkBox: annotation.checkBox,
+                        radioButton: annotation.radioButton,
+                        fieldValue: annotation.fieldValue,
+                        flags: annotation.flags
+                    });
                     
-                    // Procesar campos de formulario (Widget) y campos de texto
-                    if ((annotation.subtype === 'Widget' || annotation.fieldType) && 
-                        (annotation.fieldName || annotation.alternativeText)) {
+                    // Procesar TODAS las anotaciones de tipo Widget (campos de formulario)
+                    if (annotation.subtype === 'Widget' || annotation.fieldType) {
                         
                         this.inputCounter++;
                         totalFieldsFound++;
                         
                         // Calcular posición y tamaño
                         const rect = annotation.rect;
-                        if (!rect || rect.length < 4) return;
+                        if (!rect || rect.length < 4) {
+                            console.warn('⚠️ Anotación sin rectángulo válido:', annotation);
+                            return;
+                        }
                         
                         // Convertir coordenadas del PDF a coordenadas del canvas
                         // PDF usa coordenadas desde abajo-izquierda, HTML desde arriba-izquierda
@@ -419,29 +430,52 @@ class PDFInputEditor {
                         const width = (rect[2] - rect[0]) * this.scale;
                         const height = (rect[3] - rect[1]) * this.scale;
                         
-                        // Determinar tipo de campo
+                        // Determinar tipo de campo - LÓGICA MEJORADA PARA CHECKBOXES
                         let fieldType = 'text';
+                        
                         if (annotation.fieldType === 'Tx') {
                             fieldType = annotation.multiLine ? 'textarea' : 'text';
                         } else if (annotation.fieldType === 'Ch') {
                             fieldType = 'text'; // Combobox/Listbox como text por ahora
                         } else if (annotation.fieldType === 'Btn') {
-                            // Determinar si es checkbox, radio button o push button
-                            if (annotation.checkBox || annotation.radioButton) {
+                            // DETECCIÓN MEJORADA DE CHECKBOXES
+                            // Verificar múltiples indicadores de checkbox
+                            const isCheckbox = annotation.checkBox === true || 
+                                             annotation.radioButton === true ||
+                                             (annotation.flags && (annotation.flags & 65536)) || // Flag de checkbox
+                                             (width <= 30 && height <= 30) || // Tamaño típico de checkbox
+                                             (annotation.fieldName && annotation.fieldName.toLowerCase().includes('check')) ||
+                                             (annotation.alternativeText && annotation.alternativeText.toLowerCase().includes('check'));
+                            
+                            if (isCheckbox) {
                                 fieldType = 'checkbox';
+                                console.log('✅ Checkbox detectado:', annotation.fieldName || annotation.alternativeText);
                             } else {
                                 fieldType = 'text'; // Push button como text por ahora
+                            }
+                        } else {
+                            // Si no tiene fieldType pero es un Widget, intentar detectar por otras características
+                            if (annotation.subtype === 'Widget') {
+                                // Detectar checkbox por tamaño y características
+                                if ((width <= 30 && height <= 30) || 
+                                    (annotation.fieldName && annotation.fieldName.toLowerCase().includes('check'))) {
+                                    fieldType = 'checkbox';
+                                    console.log('✅ Checkbox detectado por características:', annotation.fieldName || annotation.alternativeText);
+                                }
                             }
                         }
                         
                         // Obtener valor del campo
                         let fieldValue = '';
                         if (fieldType === 'checkbox') {
-                            // Para checkboxes, determinar si está marcado
+                            // DETECCIÓN MEJORADA DEL ESTADO DE CHECKBOXES
                             fieldValue = (annotation.fieldValue === 'Yes' || 
                                         annotation.fieldValue === 'On' || 
+                                        annotation.fieldValue === 'true' ||
+                                        annotation.fieldValue === '1' ||
                                         annotation.fieldValue === true ||
-                                        annotation.checkBox === true) ? 'true' : 'false';
+                                        annotation.checkBox === true ||
+                                        annotation.radioButton === true) ? 'true' : 'false';
                         } else {
                             if (annotation.fieldValue) {
                                 fieldValue = annotation.fieldValue;
@@ -452,6 +486,16 @@ class PDFInputEditor {
                             }
                         }
                         
+                        // Ajustar dimensiones para checkboxes
+                        let finalWidth = Math.max(20, width);
+                        let finalHeight = Math.max(20, height);
+                        
+                        if (fieldType === 'checkbox') {
+                            // Para checkboxes, usar un tamaño estándar
+                            finalWidth = Math.min(Math.max(15, width), 25);
+                            finalHeight = Math.min(Math.max(15, height), 25);
+                        }
+                        
                         const inputData = {
                             id: `existing_${pageNum}_${index}`,
                             name: annotation.fieldName || annotation.alternativeText || `campo_existente_${this.inputCounter}`,
@@ -459,20 +503,24 @@ class PDFInputEditor {
                             page: pageNum,
                             x: Math.max(0, x),
                             y: Math.max(0, y),
-                            width: Math.max(80, width),
-                            height: Math.max(25, height),
+                            width: finalWidth,
+                            height: finalHeight,
                             value: fieldValue,
                             isExisting: true,
                             readonly: annotation.readOnly || false,
                             originalAnnotation: {
                                 fieldType: annotation.fieldType,
                                 subtype: annotation.subtype,
-                                flags: annotation.flags
+                                flags: annotation.flags,
+                                checkBox: annotation.checkBox,
+                                radioButton: annotation.radioButton
                             }
                         };
                         
                         this.inputs.push(inputData);
-                        console.log('Campo agregado:', inputData);
+                        console.log(`➕ Campo agregado: ${fieldType} "${inputData.name}" en página ${pageNum}`, inputData);
+                    } else {
+                        console.log('⏭️ Anotación omitida (no es campo de formulario):', annotation.subtype);
                     }
                 });
             }
