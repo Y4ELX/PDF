@@ -87,6 +87,7 @@ class PDFInputEditor {
             inputValue: document.getElementById('inputValue'),
             inputType: document.getElementById('inputType'),
             inputWidth: document.getElementById('inputWidth'),
+            inputHeight: document.getElementById('inputHeight'),
             applyProperties: document.getElementById('applyProperties'),
             cancelProperties: document.getElementById('cancelProperties'),
             deleteInputBtn: document.getElementById('deleteInputBtn'),
@@ -827,12 +828,14 @@ class PDFInputEditor {
         const element = document.getElementById(inputData.id);
         if (element) {
             inputData.width = element.offsetWidth;
+            inputData.height = element.offsetHeight;
         }
         
         this.elements.inputName.value = inputData.name;
         this.elements.inputValue.value = inputData.value;
         this.elements.inputType.value = inputData.type;
         this.elements.inputWidth.value = Math.round(inputData.width || 120);
+        this.elements.inputHeight.value = Math.round(inputData.height || 30);
         
         // Actualizar el título del panel para mostrar el tipo de campo
         const panelTitle = this.elements.propertiesPanel.querySelector('h4');
@@ -951,6 +954,12 @@ class PDFInputEditor {
         if (!isNaN(newWidth) && newWidth > 0) {
             this.selectedInput.width = Math.max(20, Math.min(2000, newWidth));
         }
+        
+        // Aplicar nueva altura si se especificó
+        const newHeight = parseInt(this.elements.inputHeight.value);
+        if (!isNaN(newHeight) && newHeight > 0) {
+            this.selectedInput.height = Math.max(20, Math.min(500, newHeight));
+        }
 
         // If type changed, recreate element
         if (oldType !== this.selectedInput.type) {
@@ -990,6 +999,12 @@ class PDFInputEditor {
                 if (this.selectedInput.width) {
                     element.style.width = this.selectedInput.width + 'px';
                     console.log(`📏 Campo "${this.selectedInput.name}" - anchura cambiada a: ${this.selectedInput.width}px`);
+                }
+                
+                // Aplicar nueva altura
+                if (this.selectedInput.height) {
+                    element.style.height = this.selectedInput.height + 'px';
+                    console.log(`📏 Campo "${this.selectedInput.name}" - altura cambiada a: ${this.selectedInput.height}px`);
                 }
             }
         }
