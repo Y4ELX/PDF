@@ -670,8 +670,8 @@ class PDFInputEditor {
         
         inputElement.style.left = inputData.x + 'px';
         inputElement.style.top = inputData.y + 'px';
-        inputElement.style.width = inputData.width + 'px';
-        inputElement.style.height = inputData.height + 'px';
+        inputElement.style.setProperty('width', inputData.width + 'px', 'important');
+        inputElement.style.setProperty('height', inputData.height + 'px', 'important');
 
         // Add event listeners
         inputElement.addEventListener('mousedown', (e) => {
@@ -997,13 +997,13 @@ class PDFInputEditor {
                 
                 // Aplicar nueva anchura
                 if (this.selectedInput.width) {
-                    element.style.width = this.selectedInput.width + 'px';
+                    element.style.setProperty('width', this.selectedInput.width + 'px', 'important');
                     console.log(`📏 Campo "${this.selectedInput.name}" - anchura cambiada a: ${this.selectedInput.width}px`);
                 }
                 
                 // Aplicar nueva altura
                 if (this.selectedInput.height) {
-                    element.style.height = this.selectedInput.height + 'px';
+                    element.style.setProperty('height', this.selectedInput.height + 'px', 'important');
                     console.log(`📏 Campo "${this.selectedInput.name}" - altura cambiada a: ${this.selectedInput.height}px`);
                 }
             }
@@ -1321,78 +1321,71 @@ class PDFInputEditor {
             
             const form = pdfDoc.getForm();
             
-            // 🗑️ PASO 1: Eliminar campos existentes que no están en nuestro array this.inputs
-            console.log('🗑️ ELIMINANDO CAMPOS NO DESEADOS DEL FORMULARIO ORIGINAL...');
-            const allFormFields = form.getFields();
-            console.log(`📋 Formulario original tiene ${allFormFields.length} campos`);
+            // 🆕 NUEVO ENFOQUE: Solo procesar campos NUEVOS (no existentes)
+            console.log('🆕 PROCESANDO SOLO CAMPOS NUEVOS...');
+            const newInputs = this.inputs.filter(input => !input.isExisting);
+            console.log(`🔍 Campos nuevos a procesar: ${newInputs.length}`);
             
-            // Crear un Set con los nombres de los campos que queremos conservar
-            const fieldsToKeep = new Set(
-                this.inputs
-                    .filter(input => input.isExisting && input.name)
-                    .map(input => input.name)
-            );
-            console.log(`🔒 Campos a conservar: ${Array.from(fieldsToKeep).join(', ')}`);
-            
-            // Eliminar campos que no están en nuestro array
-            let removedCount = 0;
-            for (const field of allFormFields) {
-                const fieldName = field.getName();
-                if (!fieldsToKeep.has(fieldName)) {
+            if (newInputs.length === 0) {
+                console.log('ℹ️ No hay campos nuevos para añadir. Solo actualizando valores existentes...');
+                
+                // Actualizar solo valores de campos existentes si tienen cambios
+                for (const input of this.inputs.filter(input => input.isExisting && input.value)) {
                     try {
-                        form.removeField(field);
-                        removedCount++;
-                        console.log(`🗑️ Campo eliminado: ${fieldName}`);
-                    } catch (removeError) {
-                        console.warn(`⚠️ No se pudo eliminar campo ${fieldName}:`, removeError);
+                        const field = form.getField(input.name);
+                        if (field && field.constructor.name === 'PDFTextField') {
+                            field.setText(input.value);
+                            console.log(`✅ Campo existente actualizado: ${input.name} = "${input.value}"`);
+                        }
+                    } catch (fieldError) {
+                        console.warn(`⚠️ No se pudo actualizar campo existente ${input.name}:`, fieldError);
                     }
                 }
-            }
-            console.log(`✅ Eliminados ${removedCount} campos no deseados`);
-            
-            // Get all pages
-            const pages = pdfDoc.getPages();
-            
-            // Procesar campos por página
-            for (let pageNum = 1; pageNum <= this.totalPages; pageNum++) {
-                const pageInputs = this.inputs.filter(input => input.page === pageNum);
-                if (pageInputs.length === 0) continue;
+            } else {
+                // Get all pages
+                const pages = pdfDoc.getPages();
+                
+                // Solo procesar páginas que tengan campos NUEVOS
+                for (let pageNum = 1; pageNum <= this.totalPages; pageNum++) {
+                    const pageNewInputs = newInputs.filter(input => input.page === pageNum);
+                    if (pageNewInputs.length === 0) continue;
 
-                const page = pages[pageNum - 1];
-                const { width: pageWidth, height: pageHeight } = page.getSize();
+                    const page = pages[pageNum - 1];
+                    const { width: pageWidth, height: pageHeight } = page.getSize();
 
-                console.log(`Procesando página ${pageNum}: ${pageInputs.length} campos`);
+                    console.log(`📄 Procesando página ${pageNum}: ${pageNewInputs.length} campos nuevos`);
 
-                for (const input of pageInputs) {
-                    try {
-                        // Convertir coordenadas de canvas a PDF
-                        const pdfX = input.x / this.scale;
-                        const pdfY = pageHeight - (input.y / this.scale) - (input.height / this.scale);
-                        const pdfWidth = input.width / this.scale;
-                        const pdfHeight = input.height / this.scale;
+                    for (const input of pageNewInputs) {
+                        try {
+                            // Convertir coordenadas de canvas a PDF
+                            const pdfX = input.x / this.scale;
+                            const pdfY = pageHeight - (input.y / this.scale) - (input.height / this.scale);
+                            const pdfWidth = input.width / this.scale;
+                            const pdfHeight = input.height / this.scale;
 
-                        if (input.isExisting && input.name) {
-                            // Intentar actualizar campo existente
-                            try {
-                                const field = form.getField(input.name);
-                                if (field && input.value) {
-                                    if (field.constructor.name === 'PDFTextField') {
-                                        field.setText(input.value);
-                                        console.log(`Campo existente actualizado: ${input.name} = "${input.value}"`);
-                                    }
-                                }
-                            } catch (fieldError) {
-                                console.log(`No se pudo actualizar campo existente ${input.name}, creando nuevo:`, fieldError);
-                                // Si falla, crear como campo nuevo
-                                this.createNewFormField(form, page, input, pdfX, pdfY, pdfWidth, pdfHeight);
-                            }
-                        } else {
-                            // Crear nuevo campo
+                            // Solo crear campos nuevos
                             this.createNewFormField(form, page, input, pdfX, pdfY, pdfWidth, pdfHeight);
-                        }
 
-                    } catch (error) {
-                        console.error(`Error procesando input ${input.id}:`, error);
+                        } catch (error) {
+                            console.error(`❌ Error procesando campo nuevo ${input.id}:`, error);
+                        }
+                    }
+                }
+                
+                // También actualizar valores de campos existentes si tienen cambios
+                const existingInputsWithValues = this.inputs.filter(input => input.isExisting && input.value);
+                if (existingInputsWithValues.length > 0) {
+                    console.log(`🔄 Actualizando valores de ${existingInputsWithValues.length} campos existentes...`);
+                    for (const input of existingInputsWithValues) {
+                        try {
+                            const field = form.getField(input.name);
+                            if (field && field.constructor.name === 'PDFTextField') {
+                                field.setText(input.value);
+                                console.log(`✅ Campo existente actualizado: ${input.name} = "${input.value}"`);
+                            }
+                        } catch (fieldError) {
+                            console.warn(`⚠️ No se pudo actualizar campo existente ${input.name}:`, fieldError);
+                        }
                     }
                 }
             }
@@ -1415,6 +1408,12 @@ class PDFInputEditor {
 
             const existingCount = this.inputs.filter(input => input.isExisting).length;
             const newCount = this.inputs.filter(input => !input.isExisting).length;
+            
+            console.log('✅ PDF exportado exitosamente!');
+            console.log(`📊 Estadísticas:`);
+            console.log(`   - Campos nuevos añadidos: ${newCount}`);
+            console.log(`   - Campos existentes conservados: ${existingCount}`);
+            console.log(`   - Total de campos en el PDF final: ${existingCount + newCount}`);
             
         } catch (error) {
             console.error('Error creando PDF:', error);

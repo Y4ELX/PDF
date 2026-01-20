@@ -333,7 +333,6 @@ body {
     z-index: 100;
     cursor: move;
     min-width: 10px;
-    min-height: 30px;
     resize: both;
     overflow: hidden;
     border-radius: 4px;
@@ -354,15 +353,12 @@ body {
 
 .pdf-textarea {
     resize: both;
-    min-height: 60px;
 }
 
 /* Checkbox Inputs */
 .pdf-checkbox {
     min-width: 10px !important;
     min-height: 10px !important;
-    width: 20px !important;
-    height: 20px !important;
     padding: 0 !important;
     cursor: pointer;
     accent-color: #5bb3e6;
