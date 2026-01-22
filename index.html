@@ -1,141 +1,253 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Editor de Inputs en PDF</title>
-    <link rel="shortcut icon" href="assets/pdficon.png" type="image/x-icon">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="assets/pdficon.png" type="image/x-icon" />
+    <link rel="stylesheet" href="styles.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-</head>
-<body>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  </head>
+  <body>
     <div class="container">
-        <!-- Toolbar -->
-        <div class="toolbar">
-            <div class="toolbar-section">
-                <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
-                <button id="uploadBtn" class="btn btn-primary">
-                    Subir PDF
-                </button>
-                <button id="addFieldBtn" class="btn btn-secondary" disabled>
-                    Añadir Input
-                </button>
-            </div>
-            <div class="toolbar-section">
-                <span id="fileName" class="file-name"></span>
-                <span id="pageInfo" class="page-info"></span>
-                <span id="fieldsInfo" class="fields-info" style="display: none;"></span>
-                <button id="newPdfBtn" class="btn btn-small btn-secondary" style="display: none;">
-                    Nuevo PDF
-                </button>
-            </div>
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-section">
+          <input
+            type="file"
+            id="pdfInput"
+            accept=".pdf"
+            style="display: none"
+          />
+          <input
+            type="file"
+            id="yamlInput"
+            accept=".yaml,.yml"
+            style="display: none"
+          />
+          <button id="uploadBtn" class="btn btn-primary">Subir PDF</button>
+          <button id="loadYamlBtn" class="btn btn-secondary">
+            Cargar YAML
+          </button>
+          <button id="addFieldBtn" class="btn btn-secondary" disabled>
+            Añadir Input
+          </button>
         </div>
+        <div class="toolbar-section">
+          <span id="fileName" class="file-name"></span>
+          <span
+            id="yamlStatus"
+            class="yaml-status"
+            style="
+              display: none;
+              color: #27ae60;
+              font-weight: bold;
+              margin-left: 10px;
+            "
+            >📋 YAML Cargado</span
+          >
+          <span id="pageInfo" class="page-info"></span>
+          <span
+            id="fieldsInfo"
+            class="fields-info"
+            style="display: none"
+          ></span>
+          <button
+            id="newPdfBtn"
+            class="btn btn-small btn-secondary"
+            style="display: none"
+          >
+            Nuevo PDF
+          </button>
+        </div>
+      </div>
 
-        <!-- PDF Viewer Container -->
-        <div class="pdf-container">
-            <div class="pdf-wrapper">
-                <div class="pdf-viewer" id="pdfViewer">
-                    <div class="no-pdf">
-                        <div class="no-pdf-icon">
-                            <img src="assets/pdficon.png" height="100px" alt="PDF" onerror="this.style.display='none'; this.parentNode.innerHTML='PDF';">
-                        </div>
-                        <h3>Editor de Inputs en PDF</h3>
-                        <p>Selecciona un archivo PDF para comenzar a editar</p>
-                    </div>
+      <!-- PDF Viewer Container -->
+      <div class="pdf-container">
+        <div class="pdf-wrapper">
+          <div class="pdf-viewer" id="pdfViewer">
+            <div class="no-pdf">
+              <div class="no-pdf-icon">
+                <img
+                  src="assets/pdficon.png"
+                  height="100px"
+                  alt="PDF"
+                  onerror="
+                    this.style.display = 'none';
+                    this.parentNode.innerHTML = 'PDF';
+                  "
+                />
+              </div>
+              <h3>Editor de Inputs en PDF</h3>
+              <div class="instructions-container">
+                <div class="instruction-step" id="step1">
+                  <div class="step-number">1️⃣</div>
+                  <div class="step-content">
+                    <h4>Cargar YAML con la lógica</h4>
+                    <p>
+                      Primero, carga tu archivo YAML que contiene toda la
+                      lógica, IDs y configuración de los campos
+                    </p>
+                    <button
+                      id="loadYamlFromMain"
+                      class="btn btn-primary"
+                      style="margin-top: 10px"
+                    >
+                      Cargar YAML Ahora
+                    </button>
+                    <p class="step-status" id="step1-status">⏳ Esperando...</p>
+                  </div>
                 </div>
+                <div class="instruction-step" id="step2" style="opacity: 0.5">
+                  <div class="step-number">2️⃣</div>
+                  <div class="step-content">
+                    <h4>Cargar PDF actualizado</h4>
+                    <p>
+                      Luego, carga el PDF para que se sincronice automáticamente
+                      con tu YAML
+                    </p>
+                    <p class="step-status" id="step2-status">
+                      🔒 Deshabilitado - Carga YAML primero
+                    </p>
+                  </div>
+                </div>
+                <div class="instruction-step" id="step3" style="opacity: 0.5">
+                  <div class="step-number">3️⃣</div>
+                  <div class="step-content">
+                    <h4>Hacer cambios y exportar</h4>
+                    <p>
+                      Edita los campos, agrega o elimina según necesites, y
+                      exporta con toda la lógica preservada
+                    </p>
+                    <p class="step-status" id="step3-status">
+                      🔒 Deshabilitado - Carga PDF primero
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Page Navigation -->
-        <div class="navigation" id="navigation" style="display: none;">
-            <div class="nav-section">
-                <button id="prevPage" class="btn btn-nav">Anterior</button>
-                <span class="page-counter">
-                    <span id="pageNum">1</span> / <span id="pageCount">1</span>
-                </span>
-                <button id="nextPage" class="btn btn-nav">Siguiente</button>
-            </div>
-            <div class="nav-section">
-                <div class="zoom-controls">
-                    <button id="zoomOut" class="btn btn-nav">-</button>
-                    <span id="zoomLevel" class="zoom-level">100%</span>
-                    <button id="zoomIn" class="btn btn-nav">+</button>
-                    <button id="zoomFit" class="btn btn-nav">Ajustar</button>
-                </div>
-                <button id="savePdfBtn" class="btn btn-download" disabled>
-                    Descargar PDF
-                </button>
-            </div>
+      <!-- Page Navigation -->
+      <div class="navigation" id="navigation" style="display: none">
+        <div class="nav-section">
+          <button id="prevPage" class="btn btn-nav">Anterior</button>
+          <span class="page-counter">
+            <span id="pageNum">1</span> / <span id="pageCount">1</span>
+          </span>
+          <button id="nextPage" class="btn btn-nav">Siguiente</button>
         </div>
+        <div class="nav-section">
+          <div class="zoom-controls">
+            <button id="zoomOut" class="btn btn-nav">-</button>
+            <span id="zoomLevel" class="zoom-level">100%</span>
+            <button id="zoomIn" class="btn btn-nav">+</button>
+            <button id="zoomFit" class="btn btn-nav">Ajustar</button>
+          </div>
+          <button id="savePdfBtn" class="btn btn-download" disabled>
+            Descargar PDF
+          </button>
+          <button id="exportYamlBtn" class="btn btn-download" disabled>
+            Exportar YAML
+          </button>
+        </div>
+      </div>
 
-        <!-- Context Menu -->
-        <div id="contextMenu" class="context-menu" style="display: none;">
-            <div class="context-item" data-action="edit">Editar</div>
-            <div class="context-item" data-action="delete">Eliminar</div>
-        </div>
+      <!-- Context Menu -->
+      <div id="contextMenu" class="context-menu" style="display: none">
+        <div class="context-item" data-action="edit">Editar</div>
+        <div class="context-item" data-action="delete">Eliminar</div>
+      </div>
 
-        <!-- New Field Modal -->
-        <div id="newFieldModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <h4>Nuevo Campo</h4>
-                <div class="property-group">
-                    <label>Nombre del campo:</label>
-                    <input type="text" id="newFieldName" placeholder="Ej: nombre, email, fecha_nacimiento">
-                </div>
-                <div class="property-group">
-                    <label>Tipo:</label>
-                    <select id="newFieldType">
-                        <option value="text">Texto</option>
-                        <option value="textarea">Área de texto</option>
-                        <option value="checkbox">Checkbox</option>
-                    </select>
-                </div>
-                <div class="property-group">
-                    <label>Valor por defecto (opcional):</label>
-                    <input type="text" id="newFieldValue" placeholder="Valor inicial">
-                </div>
-                <div class="property-actions">
-                    <button id="createFieldBtn" class="btn btn-small btn-primary">Crear Campo</button>
-                    <button id="cancelFieldBtn" class="btn btn-small btn-secondary">Cancelar</button>
-                </div>
-            </div>
+      <!-- New Field Modal -->
+      <div id="newFieldModal" class="modal" style="display: none">
+        <div class="modal-content">
+          <h4>Nuevo Campo</h4>
+          <div class="property-group">
+            <label>Nombre del campo:</label>
+            <input
+              type="text"
+              id="newFieldName"
+              placeholder="Ej: nombre, email, fecha_nacimiento"
+            />
+          </div>
+          <div class="property-group">
+            <label>Tipo:</label>
+            <select id="newFieldType">
+              <option value="text">Texto</option>
+              <option value="textarea">Área de texto</option>
+              <option value="checkbox">Checkbox</option>
+            </select>
+          </div>
+          <div class="property-group">
+            <label>Valor por defecto (opcional):</label>
+            <input type="text" id="newFieldValue" placeholder="Valor inicial" />
+          </div>
+          <div class="property-actions">
+            <button id="createFieldBtn" class="btn btn-small btn-primary">
+              Crear Campo
+            </button>
+            <button id="cancelFieldBtn" class="btn btn-small btn-secondary">
+              Cancelar
+            </button>
+          </div>
         </div>
+      </div>
 
-        <!-- Input Properties Panel -->
-        <div id="propertiesPanel" class="properties-panel" style="display: none;">
-            <h4>Propiedades del Input</h4>
-            <div class="property-group">
-                <label>Nombre:</label>
-                <input type="text" id="inputName" placeholder="nombre_campo">
-            </div>
-            <div class="property-group">
-                <label>Valor:</label>
-                <input type="text" id="inputValue" placeholder="Valor por defecto">
-            </div>
-            <div class="property-group">
-                <label>Tipo:</label>
-                <select id="inputType">
-                    <option value="text">Texto</option>
-                    <option value="textarea">Área de texto</option>
-                    <option value="checkbox">Checkbox</option>
-                </select>
-            </div>
-            <div class="property-group">
-                <label>Anchura (px):</label>
-                <input type="number" id="inputWidth" placeholder="120" min="20" max="2000">
-            </div>
-            <div class="property-group">
-                <label>Altura (px):</label>
-                <input type="number" id="inputHeight" placeholder="30" min="20" max="500">
-            </div>
-            <div class="property-actions">
-                <button id="applyProperties" class="btn btn-small btn-primary">Aplicar</button>
-                <button id="cancelProperties" class="btn btn-small btn-secondary">Cancelar</button>
-            </div>
+      <!-- Input Properties Panel -->
+      <div id="propertiesPanel" class="properties-panel" style="display: none">
+        <h4>Propiedades del Input</h4>
+        <div class="property-group">
+          <label>Nombre:</label>
+          <input type="text" id="inputName" placeholder="nombre_campo" />
         </div>
+        <div class="property-group">
+          <label>Valor:</label>
+          <input type="text" id="inputValue" placeholder="Valor por defecto" />
+        </div>
+        <div class="property-group">
+          <label>Tipo:</label>
+          <select id="inputType">
+            <option value="text">Texto</option>
+            <option value="textarea">Área de texto</option>
+            <option value="checkbox">Checkbox</option>
+          </select>
+        </div>
+        <div class="property-group">
+          <label>Anchura (px):</label>
+          <input
+            type="number"
+            id="inputWidth"
+            placeholder="120"
+            min="20"
+            max="2000"
+          />
+        </div>
+        <div class="property-group">
+          <label>Altura (px):</label>
+          <input
+            type="number"
+            id="inputHeight"
+            placeholder="30"
+            min="20"
+            max="500"
+          />
+        </div>
+        <div class="property-actions">
+          <button id="applyProperties" class="btn btn-small btn-primary">
+            Aplicar
+          </button>
+          <button id="cancelProperties" class="btn btn-small btn-secondary">
+            Cancelar
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

@@ -16,6 +16,7 @@ class PDFInputEditor {
         this.selectedInput = null;
         this.dragData = null;
         this.pendingFieldPosition = null;
+        this.loadedYaml = null; // Almacenar YAML cargado
 
         this.init();
     }
@@ -26,6 +27,11 @@ class PDFInputEditor {
         this.maxZoom = 400;
         this.setupElements();
         this.setupEventListeners();
+        
+        // Bloquear botón de PDF inicialmente
+        this.elements.uploadBtn.disabled = true;
+        this.elements.addFieldBtn.disabled = true;
+        this.elements.savePdfBtn.disabled = true;
         
         // Debug: verificar elementos importantes
         console.log('Elements check:', {
@@ -68,11 +74,14 @@ class PDFInputEditor {
         // Referencias a elementos DOM
         this.elements = {
             pdfInput: document.getElementById('pdfInput'),
+            yamlInput: document.getElementById('yamlInput'),
             uploadBtn: document.getElementById('uploadBtn'),
+            loadYamlBtn: document.getElementById('loadYamlBtn'),
             addFieldBtn: document.getElementById('addFieldBtn'),
             savePdfBtn: document.getElementById('savePdfBtn'),
             newPdfBtn: document.getElementById('newPdfBtn'),
             fileName: document.getElementById('fileName'),
+            yamlStatus: document.getElementById('yamlStatus'),
             pageInfo: document.getElementById('pageInfo'),
             fieldsInfo: document.getElementById('fieldsInfo'),
             pdfViewer: document.getElementById('pdfViewer'),
@@ -102,14 +111,36 @@ class PDFInputEditor {
             fitPageBtn: document.getElementById('zoomFit'),
             zoomLevel: document.getElementById('zoomLevel'),
             pdfContainer: document.querySelector('.pdf-container'),
-            clearFieldsBtn: document.getElementById('clearFieldsBtn')
+            clearFieldsBtn: document.getElementById('clearFieldsBtn'),
+            exportYamlBtn: document.getElementById('exportYamlBtn')
         };
     }
 
     setupEventListeners() {
-        // Upload PDF
+        // Upload PDF - BLOQUEADO HASTA QUE CARGUE YAML
         this.elements.uploadBtn.addEventListener('click', () => {
             this.elements.pdfInput.click();
+        });
+
+        // Load YAML
+        this.elements.loadYamlBtn.addEventListener('click', () => {
+            console.log('📋 Load YAML button clicked');
+            this.elements.yamlInput.click();
+        });
+        
+        // Load YAML from instructions
+        const loadYamlFromMain = document.getElementById('loadYamlFromMain');
+        if (loadYamlFromMain) {
+            loadYamlFromMain.addEventListener('click', () => {
+                console.log('📋 Load YAML button clicked (from instructions)');
+                this.elements.yamlInput.click();
+            });
+        }
+
+        this.elements.yamlInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.loadYAML(e.target.files[0]);
+            }
         });
 
         // New PDF button
@@ -134,6 +165,14 @@ class PDFInputEditor {
         this.elements.savePdfBtn.addEventListener('click', () => {
             this.savePdfWithFields();
         });
+
+        // Export YAML
+        if (this.elements.exportYamlBtn) {
+            this.elements.exportYamlBtn.addEventListener('click', () => {
+                console.log('📊 Export YAML button clicked');
+                this.saveInputsAsYAML();
+            });
+        }
 
         // Clear fields button
         if (this.elements.clearFieldsBtn) {
@@ -313,8 +352,70 @@ class PDFInputEditor {
         });
     }
 
+    async loadYAML(file) {
+        try {
+            console.log('📋 Cargando YAML:', file.name);
+            const yamlContent = await file.text();
+            
+            // Parsear YAML usando js-yaml
+            this.loadedYaml = jsyaml.load(yamlContent);
+            
+            console.log('✅ YAML cargado exitosamente');
+            console.log('📊 Campos en YAML:', this.loadedYaml.fields?.length || 0);
+            
+            // Mostrar indicador de YAML cargado
+            if (this.elements.yamlStatus) {
+                this.elements.yamlStatus.style.display = 'inline';
+                this.elements.yamlStatus.textContent = `📋 YAML Cargado (${this.loadedYaml.fields?.length || 0} campos)`;
+            }
+            
+            // ACTUALIZAR INSTRUCCIONES
+            this.updateInstructions();
+            
+            // HABILITAR botón de PDF
+            this.elements.uploadBtn.disabled = false;
+            
+            // Actualizar estado del paso 1
+            const step1Status = document.getElementById('step1-status');
+            if (step1Status) {
+                step1Status.textContent = `✅ YAML Cargado (${this.loadedYaml.fields?.length || 0} campos)`;
+                step1Status.style.color = '#00ff00';
+            }
+            
+            // Actualizar estado del paso 2
+            const step2Status = document.getElementById('step2-status');
+            if (step2Status) {
+                step2Status.textContent = `🔓 Ahora puedes cargar el PDF`;
+                step2Status.style.color = '#40ff23';
+            }
+            
+            // Marcar paso 1 como activo
+            const step1 = document.getElementById('step1');
+            if (step1) {
+                step1.classList.add('active');
+            }
+            
+            const step2 = document.getElementById('step2');
+            if (step2) {
+                step2.style.opacity = '1';
+            }
+            
+            alert(`✅ YAML cargado correctamente\n\n📊 Contiene ${this.loadedYaml.fields?.length || 0} campos\n\n💡 Ahora carga el PDF para sincronizar`);
+            
+        } catch (error) {
+            console.error('Error cargando YAML:', error);
+            alert('❌ Error al cargar el YAML. Asegúrate de que sea un archivo YAML válido.');
+        }
+    }
+
     async loadPDF(file) {
         try {
+            // Validar que YAML esté cargado
+            if (!this.loadedYaml) {
+                alert('❌ Debes cargar el YAML primero\n\nPor favor:\n1. Haz clic en "Cargar YAML"\n2. Selecciona tu archivo YAML\n3. Luego carga el PDF');
+                return;
+            }
+            
             this.showLoading();
             
             const arrayBuffer = await file.arrayBuffer();
@@ -346,11 +447,22 @@ class PDFInputEditor {
             this.elements.addFieldBtn.disabled = false;
             this.elements.savePdfBtn.disabled = false;
 
+            // Enable export buttons
+            if (this.elements.exportYamlBtn) {
+                this.elements.exportYamlBtn.disabled = false;
+            }
+
             // Clear previous inputs
             this.clearAllInputs();
 
             // Extract existing form fields from PDF
             await this.extractExistingFields();
+            
+            // Si hay YAML cargado, sincronizar con él
+            if (this.loadedYaml && this.loadedYaml.fields) {
+                console.log('🔄 Sincronizando con YAML cargado...');
+                this.syncFieldsWithYAML();
+            }
 
             // Render first page
             await this.renderPage();
@@ -358,6 +470,29 @@ class PDFInputEditor {
             // Initialize zoom display
             this.updateZoomDisplay();
             console.log('PDF loaded successfully, zoom initialized at', this.zoomLevel + '%');
+            
+            // ACTUALIZAR INSTRUCCIONES - Marcar paso 2 como completado
+            const step2 = document.getElementById('step2');
+            if (step2) {
+                step2.classList.add('active');
+            }
+            
+            const step2Status = document.getElementById('step2-status');
+            if (step2Status) {
+                step2Status.textContent = `✅ PDF Sincronizado`;
+                step2Status.style.color = '#00ff00';
+            }
+            
+            const step3 = document.getElementById('step3');
+            if (step3) {
+                step3.style.opacity = '1';
+            }
+            
+            const step3Status = document.getElementById('step3-status');
+            if (step3Status) {
+                step3Status.textContent = `🔓 Puedes editar y exportar`;
+                step3Status.style.color = '#40ff23';
+            }
 
         } catch (error) {
             console.error('Error loading PDF:', error);
@@ -390,6 +525,8 @@ class PDFInputEditor {
         try {
             console.log('Extrayendo campos del PDF...');
             let totalFieldsFound = 0;
+            let widgetsWithoutFieldType = 0;
+            let widgetsProcessed = 0;
             
             // Extraer campos de todas las páginas
             for (let pageNum = 1; pageNum <= this.totalPages; pageNum++) {
@@ -411,11 +548,23 @@ class PDFInputEditor {
                         flags: annotation.flags
                     });
                     
-                    // Procesar TODAS las anotaciones de tipo Widget (campos de formulario)
-                    if (annotation.subtype === 'Widget' || annotation.fieldType) {
+                    // FILTRO: Procesar anotaciones Widget (campos de formulario)
+                    // Algunos widgets puede que no tengan fieldType explícito pero siguen siendo campos válidos
+                    if (annotation.subtype !== 'Widget') {
+                        console.log('⏭️ Anotación ignorada (no es Widget):', annotation.fieldName || annotation.subtype);
+                        return;
+                    }
+                    
+                    // Procesar el Widget
+                    if (annotation.subtype === 'Widget') {
                         
-                        this.inputCounter++;
-                        totalFieldsFound++;
+                        // Logging para widgets sin fieldType
+                        if (!annotation.fieldType) {
+                            widgetsWithoutFieldType++;
+                            console.log(`⚠️ Widget sin fieldType explícito (${widgetsWithoutFieldType}): ${annotation.fieldName || 'sin nombre'}`);
+                        }
+                        
+                        widgetsProcessed++;
                         
                         // Calcular posición y tamaño
                         const rect = annotation.rect;
@@ -509,6 +658,10 @@ class PDFInputEditor {
                             value: fieldValue,
                             isExisting: true,
                             readonly: annotation.readOnly || false,
+                            // Propiedades para sincronización con YAML
+                            idpdf: annotation.fieldName || `field_${pageNum}_${index}`,
+                            idlogic: '', // Se llenará desde YAML si está disponible
+                            optionInfo: null, // Se llenará desde YAML si hay option_info
                             originalAnnotation: {
                                 fieldType: annotation.fieldType,
                                 subtype: annotation.subtype,
@@ -527,10 +680,16 @@ class PDFInputEditor {
             }
             
             console.log(`Extracción completada: ${totalFieldsFound} campos encontrados en total`);
+            console.log(`  - Widgets procesados: ${widgetsProcessed}`);
+            console.log(`  - Widgets sin fieldType explícito: ${widgetsWithoutFieldType}`);
             
             if (totalFieldsFound === 0) {
                 console.log('No se encontraron campos de formulario en el PDF');
             }
+            
+            // NO HACER DEDUPLICACIÓN AQUÍ
+            // Los campos duplicados verdaderos se manejarán durante la sincronización con YAML
+            console.log(`📊 Campos extraídos del PDF: ${this.inputs.length}`);
             
         } catch (error) {
             console.error('Error extrayendo campos del PDF:', error);
@@ -539,6 +698,114 @@ class PDFInputEditor {
                 alert('No se pudieron detectar automáticamente los campos existentes del PDF. Puedes agregar campos manualmente.');
             }, 1000);
         }
+    }
+
+    syncFieldsWithYAML() {
+        console.log('🔄 INICIANDO SINCRONIZACIÓN CON YAML');
+        console.log(`   Campos detectados en PDF: ${this.inputs.length}`);
+        console.log(`   Campos en YAML: ${this.loadedYaml.fields.length}`);
+        
+        // Crear un mapa de campos YAML por nombre y página (búsqueda exacta)
+        const yamlFieldMap = new Map();
+        const yamlFieldMapFuzzy = new Map(); // Búsqueda fuzzy por nombre
+        
+        this.loadedYaml.fields.forEach(yamlField => {
+            const key = `${yamlField.field_name}_${yamlField.page}`;
+            yamlFieldMap.set(key, yamlField);
+            
+            // También guardar solo por nombre (sin página) para búsqueda fuzzy
+            yamlFieldMapFuzzy.set(yamlField.field_name, yamlField);
+        });
+        
+        // Sincronizar campos del PDF con info del YAML
+        this.inputs.forEach(pdfField => {
+            let yamlField = null;
+            
+            // Búsqueda 1: Exacta por nombre + página
+            const keyExact = `${pdfField.name}_${pdfField.page}`;
+            yamlField = yamlFieldMap.get(keyExact);
+            
+            // Búsqueda 2: Si no encontró, buscar solo por nombre (puede estar en página diferente)
+            if (!yamlField) {
+                yamlField = yamlFieldMapFuzzy.get(pdfField.name);
+            }
+            
+            // Búsqueda 3: Búsqueda parcial si el nombre es muy similar
+            if (!yamlField) {
+                for (let [key, field] of yamlFieldMap.entries()) {
+                    // Verificar si el nombre contiene palabras clave similares
+                    if (this.stringSimilarity(pdfField.name, field.field_name) > 0.7) {
+                        yamlField = field;
+                        console.log(`   ✓ Coincidencia fuzzy encontrada: "${pdfField.name}" → "${field.field_name}"`);
+                        break;
+                    }
+                }
+            }
+            
+            if (yamlField) {
+                console.log(`✅ Campo sincronizado: ${pdfField.name}`);
+                console.log(`   Lógica: ${yamlField.idlogic ? yamlField.idlogic.substring(0, 50) + '...' : '(vacío)'}`);
+                
+                // Conservar toda la información del YAML
+                pdfField.idlogic = yamlField.idlogic || '';
+                pdfField.idpdf = yamlField.idpdf || pdfField.id;
+                pdfField.optionInfo = yamlField.option_info || null;
+                
+                // GUARDAR COORDENADAS ORIGINALES DEL YAML (NO escaladas)
+                pdfField.x_coord = yamlField.x_coord;
+                pdfField.y_coord = yamlField.y_coord;
+                pdfField.width_original = yamlField.width;
+                pdfField.height_original = yamlField.height;
+                
+                // MARCAR que este campo viene del YAML (puede tener duplicados intencionales)
+                pdfField.fromYaml = true;
+                
+                // Conservar el tipo del YAML si es diferente
+                if (yamlField.field_type && yamlField.field_type !== 'unknown') {
+                    pdfField.type = yamlField.field_type;
+                }
+            } else {
+                console.log(`⚠️ Campo NO encontrado en YAML: ${pdfField.name}`);
+                pdfField.idlogic = ''; // Mantener vacío si no está en YAML
+                pdfField.fromYaml = false; // Este es un campo nuevo/no sincronizado
+            }
+        });
+        
+        console.log('✅ Sincronización completada');
+    }
+    
+    // Función auxiliar para medir similitud entre strings
+    stringSimilarity(str1, str2) {
+        const s1 = str1.toLowerCase();
+        const s2 = str2.toLowerCase();
+        
+        // Si son iguales, retornar 1
+        if (s1 === s2) return 1;
+        
+        // Si uno contiene al otro, retornar 0.8
+        if (s1.includes(s2) || s2.includes(s1)) return 0.8;
+        
+        // Contar palabras en común
+        const words1 = s1.split(/\s+/);
+        const words2 = s2.split(/\s+/);
+        const commonWords = words1.filter(w => words2.includes(w)).length;
+        const totalWords = Math.max(words1.length, words2.length);
+        
+        return totalWords > 0 ? commonWords / totalWords : 0;
+    }
+
+    // Función para generar nombre de archivo modificado
+    getModifiedFileName(extension) {
+        const fileName = this.elements.fileName.textContent;
+        // Remover extensión original
+        const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+        return `${nameWithoutExt}_modified.${extension}`;
+    }
+
+    // Actualizar instrucciones según el estado
+    updateInstructions() {
+        // Este método se llama cuando cargamos YAML o PDF
+        // para actualizar visualmente el estado del flujo
     }
 
     async renderPage() {
@@ -1104,6 +1371,7 @@ class PDFInputEditor {
         this.selectedInput = null;
         this.dragData = null;
         this.pendingFieldPosition = null;
+        this.loadedYaml = null; // Limpiar YAML cargado
 
         // Clear all inputs
         this.clearAllInputs();
@@ -1113,10 +1381,54 @@ class PDFInputEditor {
         this.elements.pageInfo.textContent = '';
         this.elements.fieldsInfo.style.display = 'none';
         this.elements.navigation.style.display = 'none';
+        
+        // Limpiar indicador YAML
+        if (this.elements.yamlStatus) {
+            this.elements.yamlStatus.style.display = 'none';
+        }
+        
         this.elements.uploadBtn.style.display = 'inline-flex';
         this.elements.newPdfBtn.style.display = 'none';
         this.elements.addFieldBtn.disabled = true;
         this.elements.savePdfBtn.disabled = true;
+        
+        // Bloquear botón de PDF nuevamente
+        this.elements.uploadBtn.disabled = true;
+        
+        // Resetear instrucciones
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        
+        if (step1) {
+            step1.classList.remove('active');
+        }
+        if (step2) {
+            step2.classList.remove('active');
+            step2.style.opacity = '0.5';
+        }
+        if (step3) {
+            step3.classList.remove('active');
+            step3.style.opacity = '0.5';
+        }
+        
+        const step1Status = document.getElementById('step1-status');
+        if (step1Status) {
+            step1Status.textContent = '⏳ Esperando...';
+            step1Status.style.color = '#a0a0a0';
+        }
+        
+        const step2Status = document.getElementById('step2-status');
+        if (step2Status) {
+            step2Status.textContent = '🔒 Deshabilitado - Carga YAML primero';
+            step2Status.style.color = '#707070';
+        }
+        
+        const step3Status = document.getElementById('step3-status');
+        if (step3Status) {
+            step3Status.textContent = '🔒 Deshabilitado - Carga PDF primero';
+            step3Status.style.color = '#707070';
+        }
         
         // Ocultar botón de limpiar campos
         if (this.elements.clearFieldsBtn) {
@@ -1257,13 +1569,137 @@ class PDFInputEditor {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `pdf-fields-complete-${Date.now()}.json`;
+        a.download = this.getModifiedFileName('json');
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
         alert(`Se han guardado ${this.inputs.length} campos:\n- ${existingFields.length} campos originales del PDF\n- ${newFields.length} campos nuevos agregados`);
+    }
+
+    saveInputsAsYAML() {
+        // Update all input positions and values before saving
+        this.inputs.forEach(input => {
+            const element = document.getElementById(input.id);
+            if (element) {
+                input.value = element.value;
+                // NO actualizar width/height - mantener los originales
+                // input.width = parseInt(element.style.width);
+                // input.height = parseInt(element.style.height);
+            }
+        });
+
+        // Separar campos existentes de nuevos
+        const existingFields = this.inputs.filter(input => input.isExisting);
+        const newFields = this.inputs.filter(input => !input.isExisting);
+
+        // Construir el YAML
+        let yamlContent = 'pdf_info:\n';
+        yamlContent += `  filename: ${this.elements.fileName.textContent}\n`;
+        
+        // Preservar info del YAML original si existe
+        if (this.loadedYaml && this.loadedYaml.pdf_info) {
+            if (this.loadedYaml.pdf_info.filepath) {
+                yamlContent += `  filepath: ${this.loadedYaml.pdf_info.filepath}\n`;
+            }
+            if (this.loadedYaml.pdf_info.analysis_date) {
+                yamlContent += `  analysis_date: '${this.loadedYaml.pdf_info.analysis_date}'\n`;
+            }
+        }
+        
+        yamlContent += `  total_pages: ${this.totalPages}\n`;
+        yamlContent += `  total_fields: ${this.inputs.length}\n`;
+        yamlContent += `  sorting: 'Natural order: by page, then top-to-bottom, left-to-right'\n`;
+        yamlContent += 'fields:\n';
+
+        // Agrupar campos por página y ordenar
+        const fieldsByPage = {};
+        this.inputs.forEach(input => {
+            if (!fieldsByPage[input.page]) {
+                fieldsByPage[input.page] = [];
+            }
+            fieldsByPage[input.page].push(input);
+        });
+
+        // Ordenar campos dentro de cada página (top-to-bottom, left-to-right)
+        // USAR COORDENADAS ORIGINALES DEL YAML para la comparación
+        Object.keys(fieldsByPage).sort((a, b) => parseInt(a) - parseInt(b)).forEach(page => {
+            fieldsByPage[page].sort((a, b) => {
+                // Usar y_coord original si existe
+                const aY = a.y_coord || a.y;
+                const bY = b.y_coord || b.y;
+                const aX = a.x_coord || a.x;
+                const bX = b.x_coord || b.x;
+                
+                // Primero por Y (top-to-bottom)
+                if (Math.abs(aY - bY) > 5) {
+                    return aY - bY;
+                }
+                // Si están en la misma línea, por X (left-to-right)
+                return aX - bX;
+            });
+        });
+
+        // Generar campos en YAML preservando EXACTAMENTE los originales
+        let fieldIndex = 0;
+        
+        Object.keys(fieldsByPage).sort((a, b) => parseInt(a) - parseInt(b)).forEach(page => {
+            fieldsByPage[page].forEach(input => {
+                // EXPORTAR TODOS - SIN DEDUPLICACION
+                // La deduplicacion debe ocurrir en extractExistingFields(), no aqui
+                
+                // PRESERVAR COORDENADAS ORIGINALES DEL YAML
+                const x = input.x_coord !== undefined ? input.x_coord : input.x;
+                const y = input.y_coord !== undefined ? input.y_coord : input.y;
+                const width = input.width_original !== undefined ? input.width_original : input.width;
+                const height = input.height_original !== undefined ? input.height_original : input.height;
+                
+                yamlContent += `  - x_coord: ${x.toFixed(2)}\n`;
+                yamlContent += `    y_coord: ${y.toFixed(2)}\n`;
+                yamlContent += `    width: ${width.toFixed(2)}\n`;
+                yamlContent += `    height: ${height.toFixed(2)}\n`;
+                yamlContent += `    page: ${input.page}\n`;
+                yamlContent += `    idpdf: ${input.idpdf || input.id}\n`;
+                // PRESERVAR LA LÓGICA EXACTA DEL YAML ORIGINAL
+                yamlContent += `    idlogic: '${(input.idlogic || '').toString().replace(/'/g, "\\'")}'  \n`;
+                yamlContent += `    field_name: ${input.name}\n`;
+                yamlContent += `    field_type: ${input.type}\n`;
+                
+                // Si hay información de opciones (para checkboxes/radios), agregarla
+                if (input.optionInfo) {
+                    yamlContent += `    option_info:\n`;
+                    yamlContent += `      option_number: ${input.optionInfo.option_number}\n`;
+                    yamlContent += `      total_options: ${input.optionInfo.total_options}\n`;
+                    yamlContent += `      is_multi_option: ${input.optionInfo.is_multi_option}\n`;
+                }
+                
+                fieldIndex++;
+            });
+        });
+
+        // Download as YAML
+        const blob = new Blob([yamlContent], { 
+            type: 'application/x-yaml' 
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.getModifiedFileName('yaml');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('✅ YAML exportado exitosamente!');
+        console.log(`📊 Estadísticas:`);
+        console.log(`   - Campos existentes: ${existingFields.length}`);
+        console.log(`   - Campos nuevos: ${newFields.length}`);
+        console.log(`   - Total de campos: ${this.inputs.length}`);
+        console.log(`📋 Información preservada del YAML original`);
+
+        alert(`✅ YAML exportado correctamente!\n\n📊 Resumen:\n- Campos existentes: ${existingFields.length}\n- Campos nuevos: ${newFields.length}\n- Total: ${this.inputs.length}\n\n✨ Preservado:\n✓ Tamaños originales\n✓ Coordenadas originales\n✓ Lógica exacta\n✓ Sin duplicados`);
     }
 
     async savePdfWithFields() {
@@ -1399,8 +1835,7 @@ class PDFInputEditor {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const fileName = this.elements.fileName.textContent.replace('.pdf', '') || 'documento';
-            a.download = `${fileName}_con_campos_${Date.now()}.pdf`;
+            a.download = this.getModifiedFileName('pdf');
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1586,8 +2021,7 @@ class PDFInputEditor {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const fileName = this.elements.fileName.textContent.replace('.pdf', '') || 'documento';
-            a.download = `${fileName}_campos_${Date.now()}.pdf`;
+            a.download = this.getModifiedFileName('pdf');
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
